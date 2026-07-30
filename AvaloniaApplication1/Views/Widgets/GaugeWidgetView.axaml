@@ -1,0 +1,61 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:AvaloniaApplication1.ViewModels"
+             xmlns:avaloniaApplication1="clr-namespace:AvaloniaApplication1"
+             xmlns:widgets="clr-namespace:AvaloniaApplication1.ViewModels.Widgets"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="AvaloniaApplication1.Views.Widgets.GaugeWidgetView"
+             x:DataType="widgets:GaugeWidgetViewModel">
+    <UserControl.Styles>
+        <Style Selector="Arc.critical, StackPanel.critical">
+            <Style.Animations>
+                <Animation Duration="0:0:1" IterationCount="Infinite" PlaybackDirection="Alternate">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="1.0" />
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="0.1" />
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid Width="250" Height="250" Background="#2B2A4A">
+        <Ellipse Stroke="#403E5C" StrokeThickness="15" Margin="20"/>
+
+        <Arc StartAngle="270" 
+             SweepAngle="{Binding SweepAngle}" 
+             Stroke="{Binding WidgetColor}" 
+             StrokeThickness="15" 
+             Margin="20" 
+             StrokeLineCap="Flat"
+             Classes.critical="{Binding IsCritical}"/>
+
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" 
+                        Classes.critical="{Binding IsCritical}">
+                
+                <TextBlock Text="{Binding Value, StringFormat={}{0:0.0}}" 
+                           FontSize="56" 
+                           FontWeight="Medium" 
+                           Foreground="{Binding WidgetColor}" 
+                           VerticalAlignment="Bottom"/>
+                
+                <TextBlock Text="{Binding Unit}" 
+                           FontSize="24" 
+                           Foreground="{Binding WidgetColor}" 
+                           VerticalAlignment="Bottom" 
+                           Margin="5,0,0,10"/>
+            </StackPanel>
+            
+            <TextBlock Text="{Binding Title}" 
+                       FontSize="16" 
+                       Foreground="#E0E0E0" 
+                       HorizontalAlignment="Center" />
+        </StackPanel>
+    </Grid>
+</UserControl>

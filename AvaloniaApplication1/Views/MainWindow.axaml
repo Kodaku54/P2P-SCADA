@@ -1,0 +1,66 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:AvaloniaApplication1.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1024" d:DesignHeight="768"
+        x:Class="AvaloniaApplication1.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Панель керування SCADA"
+        x:Name="Home"> <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto, *">
+        
+        <Border Grid.Row="0" Background="#2B2D30" Padding="10">
+            <StackPanel Orientation="Vertical" Spacing="10">
+                
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Button Content="Вікно логіну" Command="{Binding LoginCommand}"/>
+                    <Button Content="Сторінка 1" Command="{Binding GoToPage1Command}"/>
+                </StackPanel>
+
+                <Separator Background="#3E3E42" Margin="0,5"/>
+
+                <ItemsControl ItemsSource="{Binding Dashboards}">
+                    
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="#3E3E42" CornerRadius="5" Margin="0,0,10,0" Padding="5">
+                                <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                    
+                                    <Button Content="{Binding DashboardTitle}" 
+                                            Command="{Binding #Home.((vm:MainWindowViewModel)DataContext).NavigateToDeviceCommand}"
+                                            CommandParameter="{Binding}"
+                                            Background="Transparent"
+                                            BorderThickness="0"/>
+                                    
+                                    <Button Content="🗗" 
+                                            ToolTip.Tip="Відкрити в новому вікні"
+                                            Command="{Binding #Home.((vm:MainWindowViewModel)DataContext).DetachDashboardCommand}"
+                                            CommandParameter="{Binding}"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Foreground="Green"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Background="#1E1E1E">
+            <TransitioningContentControl Content="{Binding CurrentPage}" Margin="10" />
+        </Border>
+
+    </Grid>
+</Window>

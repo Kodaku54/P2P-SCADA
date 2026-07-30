@@ -1,0 +1,26 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:AvaloniaApplication1.ViewModels"
+        x:Class="AvaloniaApplication1.Views.DashboardWindow"
+        x:DataType="vm:DashboardViewModel"
+        Title="{Binding DashboardTitle}" 
+        Width="800" Height="600"
+        Background="#1E1E2E"> <Grid RowDefinitions="Auto,*">
+        <TextBlock Grid.Row="0" 
+                   Text="{Binding DashboardTitle}" 
+                   FontSize="24" 
+                   FontWeight="Bold" 
+                   Foreground="White" 
+                   Margin="20"/>
+
+        <ScrollViewer Grid.Row="1">
+            <ItemsControl ItemsSource="{Binding Widgets}" Margin="20">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</Window>

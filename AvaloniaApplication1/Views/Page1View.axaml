@@ -1,0 +1,32 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:AvaloniaApplication1.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="AvaloniaApplication1.Views.Page1View"
+             x:DataType="vm:Page1ViewModel" >
+    <Grid RowDefinitions="Auto, Auto, *">
+    
+        <Button Grid.Row="0" 
+                Content="Оновити статус Tailscale" 
+                Command="{Binding GetTailscaleStatusCommand}" 
+                Margin="15, 15, 15, 5" 
+                HorizontalAlignment="Stretch" 
+                HorizontalContentAlignment="Center"/>
+
+        <Button Grid.Row="1" 
+                Content="Запустити службу (Потребує Root)" 
+                Command="{Binding StartTailscaleServiceCommand}" 
+                Margin="15, 5, 15, 15" 
+                HorizontalAlignment="Stretch" 
+                HorizontalContentAlignment="Center"
+                Background="#662222"/> <ScrollViewer Grid.Row="2" Margin="15">
+            <TextBlock Text="{Binding TailscaleOutput}" 
+                       FontFamily="Monospace" 
+                       FontSize="14" 
+                       TextWrapping="Wrap"/>
+        </ScrollViewer>
+    
+    </Grid>
+</UserControl>
