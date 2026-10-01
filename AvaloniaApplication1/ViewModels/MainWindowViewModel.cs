@@ -36,8 +36,10 @@ public partial class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel()
     {
         Dashboards = new ObservableCollection<DashboardViewModel>();
-        Dashboards.Add(new DashboardViewModel("100.85.42.12", "Лабораторія RPi 1"));
-        Dashboards.Add(new DashboardViewModel("100.85.42.13", "Лабораторія 2 RPi 3"));
+        Dashboards.Add(new DashboardViewModel("100.85.42.12", "Лабораторія RPi 1",
+            "avares://AvaloniaApplication1/Assets/scheme.jpeg"));
+        Dashboards.Add(new DashboardViewModel("100.85.42.13", "Лабораторія 2 RPi 3",
+            "avares://AvaloniaApplication1/Assets/scheme.jpeg"));
     }
     [RelayCommand]
     private void DetachDashboard(DashboardViewModel dashboardToDetach)

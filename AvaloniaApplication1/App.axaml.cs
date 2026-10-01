@@ -30,7 +30,7 @@ public partial class App : Application
                 DataContext = new MainWindowViewModel(),
             };
             
-            /*для тесту!*/
+            /*/*для тесту!#1#
             // НАША НОВА ЛОГІКА ІНІЦІАЛІЗАЦІЇ
             string configFileName = "RPi_Laboratory_1.json";
         
@@ -58,7 +58,7 @@ public partial class App : Application
 
             // Запускаємо сервіс із завантаженим (або новоствореним) конфігом
             var modbusService = new Services.ModbusService(config);
-            _ = System.Threading.Tasks.Task.Run(() => modbusService.StartPollingAsync(System.Threading.CancellationToken.None));
+            _ = System.Threading.Tasks.Task.Run(() => modbusService.StartPollingAsync(System.Threading.CancellationToken.None));*/
         }
 
         base.OnFrameworkInitializationCompleted();

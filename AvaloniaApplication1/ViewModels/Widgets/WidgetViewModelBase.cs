@@ -4,6 +4,7 @@ namespace AvaloniaApplication1.ViewModels.Widgets;
 
 public partial class WidgetViewModelBase : ViewModelBase
 {
-    [ObservableProperty]
-    private string _title = "Невідомий датчик";
+    [ObservableProperty] private string _title = "Невідомий датчик";
+    [ObservableProperty] private double _x;
+    [ObservableProperty] private double _y;
 }

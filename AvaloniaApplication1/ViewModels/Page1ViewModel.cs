@@ -17,14 +17,23 @@ public partial class Page1ViewModel : ViewModelBase
     [RelayCommand]
     private async Task GetTailscaleStatusAsync()
     {
-        bool isConnected = await _tailscale.ConnectAsync();
-        if (isConnected)
+        string rawJson = await _tailscale.GetStatusJsonAsync();
+        TailscaleOutput = TryPrettyPrint(rawJson);
+    }
+
+    private static string TryPrettyPrint(string json)
+    {
+        try
         {
-            TailscaleOutput = "connected";
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            return System.Text.Json.JsonSerializer.Serialize(doc, new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
         }
-        else
+        catch
         {
-            TailscaleOutput = "error";
+            return json; // якщо прийшла не-JSON помилка — покажемо як є
         }
     }
     [RelayCommand]
