@@ -7,4 +7,5 @@ public partial class WidgetViewModelBase : ViewModelBase
     [ObservableProperty] private string _title = "Невідомий датчик";
     [ObservableProperty] private double _x;
     [ObservableProperty] private double _y;
+    [ObservableProperty] private double _scale = 1.0;
 }

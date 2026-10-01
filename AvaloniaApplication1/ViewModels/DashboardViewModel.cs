@@ -26,8 +26,11 @@ public partial class DashboardViewModel : ViewModelBase
         Widgets = new ObservableCollection<WidgetViewModelBase>();
         string tagPrefix = $"{ipAddress}_";
         // Обидва віджети слухають один і той самий тег
-        /*Widgets.Add(new GaugeWidgetViewModel("Boiler_1_Temp", "Температура", "°C", 30, 70));
-        Widgets.Add(new ChartWidgetViewModel("Boiler_1_Temp1", "Графік котла", "°C", 300));*/
+        Widgets.Add(new GaugeWidgetViewModel("Boiler_1_Temp", "Температура", "°C", 30, 70)
+        {
+            X = 200, Y = 200
+        });
+        // Widgets.Add(new ChartWidgetViewModel("Boiler_1_Temp1", "Графік котла", "°C", 300));
         Widgets.Add(new ChartWidgetViewModel("100.96.134.108_Sensor1", "Датчик з Малинки", "Unit", 50)
         {
             X = 1, Y = 1
