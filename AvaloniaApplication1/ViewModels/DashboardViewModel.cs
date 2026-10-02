@@ -1,6 +1,7 @@
 using System.IO;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using AvaloniaApplication1.Services;
 using AvaloniaApplication1.ViewModels.Widgets;
 using CommunityToolkit.Mvvm.Messaging;
 
@@ -17,6 +18,8 @@ public partial class DashboardViewModel : ViewModelBase
     public string DeviceIp { get; }
     public string DashboardTitle { get; }
     public Bitmap? BackgroundImage { get; set; }
+
+    private readonly DataSimulator _simulator; //Симулятор
     
     public DashboardViewModel(string ipAddress, string title, string? backgroundImagePath = null)
     {
@@ -26,19 +29,34 @@ public partial class DashboardViewModel : ViewModelBase
         Widgets = new ObservableCollection<WidgetViewModelBase>();
         string tagPrefix = $"{ipAddress}_";
         // Обидва віджети слухають один і той самий тег
-        /*Widgets.Add(new GaugeWidgetViewModel("Boiler_1_Temp", "Температура", "°C", 30, 70));
-        Widgets.Add(new ChartWidgetViewModel("Boiler_1_Temp1", "Графік котла", "°C", 300));*/
-        Widgets.Add(new ChartWidgetViewModel("100.96.134.108_Sensor1", "Датчик з Малинки", "Unit", 50)
+        // Widgets.Add(new GaugeWidgetViewModel("Boiler_1_Temp", "Температура", "°C", 30, 70)
+        // {
+        //     X = 200, Y = 200
+        // });
+        // // Widgets.Add(new ChartWidgetViewModel("Boiler_1_Temp1", "Графік котла", "°C", 300));
+        // Widgets.Add(new ChartWidgetViewModel("100.96.134.108_Sensor1", "Датчик з Малинки", "Unit", 50)
+        // {
+        //     X = 1, Y = 1
+        // });
+        
+        
+        //Старт симулятору
+        string chartTag = $"{ipAddress}_Sensor1";   // було "100.96.134.108_Sensor1" — поверніть для реальних даних
+        string gaugeTag = $"{ipAddress}_Temp";
+
+        Widgets.Add(new ChartWidgetViewModel(chartTag, "Датчик з Малинки", "Unit", 50)
         {
-            X = 1, Y = 1
+            X = 20, Y = 20, Height = 200,  Width = 300
+        });
+        Widgets.Add(new GaugeWidgetViewModel(gaugeTag, "Температура", "°C", 0, 100)
+        {
+            X = 450, Y = 20, Height = 200,  Width = 300
         });
 
-        // Запуск таймера, який викликає SimulateNewData кожну секунду (або частіше)
-        /*var timer = new DispatcherTimer();
-        timer.Interval = TimeSpan.FromMilliseconds(100); // 100 мс буде цілком достатньо для тесту
-        timer.Tick += (s, e) => SimulateNewData();
-        timer.Start();*/
-        
+        _simulator = new DataSimulator(500)
+            .Add(chartTag, 0, 100, periodSeconds: 30)
+            .Add(gaugeTag, 0, 100, periodSeconds: 20);
+        _simulator.Start();
     }
 
     private static Bitmap? LoadBitmap(string? path)
@@ -60,19 +78,8 @@ public partial class DashboardViewModel : ViewModelBase
             System.Diagnostics.Debug.WriteLine($"[Dashboard] Не вдалося завантажити фон: {ex.Message}");
         }
 
-        return null; // немає фону, але програма не падає
+        return null;
     }
 
     private double _timeStep = 0;
-
-    /*private void SimulateNewData()
-    {
-        _timeStep += 0.2; 
-        
-        double sineValue = Math.Sin(_timeStep) * 15 + 50;
-        sineValue = Math.Round(sineValue, 1);
-        
-        WeakReferenceMessenger.Default.Send(new Messages.SensorDataMessage("Boiler_1_Temp", sineValue));
-        WeakReferenceMessenger.Default.Send(new Messages.SensorDataMessage("Boiler_1_Temp1", sineValue));
-    }*/
 }

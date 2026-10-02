@@ -8,9 +8,8 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="AvaloniaApplication1.Views.Widgets.ChartWidgetView"
              x:DataType="widgets:ChartWidgetViewModel">
-    <Grid Background="#2B2A4A" Width="400" Height="250">
+    <Grid Background="#2B2A4A" Width="{Binding Width}" Height="{Binding Height}">
         
         <lvc:CartesianChart Series="{Binding Series}" Padding="2"  CornerRadius="30"/>
-        
     </Grid>
 </UserControl>

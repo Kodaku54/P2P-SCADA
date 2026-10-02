@@ -69,7 +69,7 @@ public partial class MainWindowViewModel : ViewModelBase
             Dashboards.Add(dashboardToDetach);
         
             // Робимо його знову активним у головному вікні (за бажанням)
-            CurrentPage = dashboardToDetach;
+            //CurrentPage = dashboardToDetach;
         };
 
         // 5. Відкриваємо вікно!
