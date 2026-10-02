@@ -22,40 +22,41 @@
             </Style.Animations>
         </Style>
     </UserControl.Styles>
+    <Viewbox Width="{Binding Width}" Height="{Binding Height}" Stretch="Uniform">
+        <Grid Width="250" Height="250">
+            <Ellipse Fill="#2B2A4A" Stroke="#403E5C" StrokeThickness="15" Margin="20"/>
+            <Arc StartAngle="270" 
+                 SweepAngle="{Binding SweepAngle}" 
+                 Stroke="{Binding WidgetColor}" 
+                 StrokeThickness="15" 
+                 Margin="20" 
+                 StrokeLineCap="Flat"
+                 Classes.critical="{Binding IsCritical}"/>
 
-    <Grid Width="250" Height="250" Background="#2B2A4A">
-        <Ellipse Stroke="#403E5C" StrokeThickness="15" Margin="20"/>
-
-        <Arc StartAngle="270" 
-             SweepAngle="{Binding SweepAngle}" 
-             Stroke="{Binding WidgetColor}" 
-             StrokeThickness="15" 
-             Margin="20" 
-             StrokeLineCap="Flat"
-             Classes.critical="{Binding IsCritical}"/>
-
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
             
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" 
-                        Classes.critical="{Binding IsCritical}">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" 
+                            Classes.critical="{Binding IsCritical}">
                 
-                <TextBlock Text="{Binding Value, StringFormat={}{0:0.0}}" 
-                           FontSize="56" 
-                           FontWeight="Medium" 
-                           Foreground="{Binding WidgetColor}" 
-                           VerticalAlignment="Bottom"/>
+                    <TextBlock Text="{Binding Value, StringFormat={}{0:0.0}}" 
+                               FontSize="56" 
+                               FontWeight="Medium" 
+                               Foreground="{Binding WidgetColor}" 
+                               VerticalAlignment="Bottom"/>
                 
-                <TextBlock Text="{Binding Unit}" 
-                           FontSize="24" 
-                           Foreground="{Binding WidgetColor}" 
-                           VerticalAlignment="Bottom" 
-                           Margin="5,0,0,10"/>
+                    <TextBlock Text="{Binding Unit}" 
+                               FontSize="24" 
+                               Foreground="{Binding WidgetColor}" 
+                               VerticalAlignment="Bottom" 
+                               Margin="5,0,0,10"/>
+                </StackPanel>
             </StackPanel>
-            
-            <TextBlock Text="{Binding Title}" 
-                       FontSize="16" 
-                       Foreground="#E0E0E0" 
-                       HorizontalAlignment="Center" />
-        </StackPanel>
-    </Grid>
+            <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0 -90">
+                <TextBlock Text="{Binding Title}" 
+                           FontSize="16" 
+                           Foreground="#E0E0E0" 
+                           HorizontalAlignment="Center" />
+            </StackPanel>
+        </Grid>
+    </Viewbox>
 </UserControl>

@@ -38,17 +38,19 @@ public partial class DashboardViewModel : ViewModelBase
         // {
         //     X = 1, Y = 1
         // });
+        
+        
         //Старт симулятору
         string chartTag = $"{ipAddress}_Sensor1";   // було "100.96.134.108_Sensor1" — поверніть для реальних даних
         string gaugeTag = $"{ipAddress}_Temp";
 
         Widgets.Add(new ChartWidgetViewModel(chartTag, "Датчик з Малинки", "Unit", 50)
         {
-            X = 20, Y = 20, Scale = 0.7
+            X = 20, Y = 20, Height = 200,  Width = 300
         });
         Widgets.Add(new GaugeWidgetViewModel(gaugeTag, "Температура", "°C", 0, 100)
         {
-            X = 450, Y = 20
+            X = 450, Y = 20, Height = 200,  Width = 300
         });
 
         _simulator = new DataSimulator(500)
