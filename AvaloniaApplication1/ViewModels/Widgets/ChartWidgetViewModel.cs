@@ -1,5 +1,5 @@
 using System.Collections.ObjectModel;
-using CommunityToolkit.Mvvm.ComponentModel;
+using AvaloniaApplication1.Models;
 using CommunityToolkit.Mvvm.Messaging;
 using LiveChartsCore;
 using LiveChartsCore.Defaults;
@@ -12,9 +12,6 @@ namespace AvaloniaApplication1.ViewModels.Widgets;
 public partial class ChartWidgetViewModel : WidgetViewModelBase
 {
     public string DataSourceTag { get; }
-
-    [ObservableProperty] 
-    private string _title;
 
     // Колекція серій (ліній) для графіка
     public ObservableCollection<ISeries> Series { get; set; }
@@ -73,5 +70,23 @@ public partial class ChartWidgetViewModel : WidgetViewModelBase
                 }
             }
         });
+    }
+
+    // Створення зі збереженого конфігу
+    public ChartWidgetViewModel(ChartWidgetConfig config, string dataSourceTag)
+        : this(dataSourceTag, config.Title, config.YAxisLabel, config.MaxPoints)
+    {
+        LoadCommon(config);
+    }
+
+    public override WidgetConfig ToConfig()
+    {
+        var config = new ChartWidgetConfig
+        {
+            YAxisLabel = YAxes[0].Name ?? string.Empty,
+            MaxPoints = _maxPoints
+        };
+        SaveCommon(config);
+        return config;
     }
 }

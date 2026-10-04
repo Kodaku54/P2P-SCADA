@@ -2,6 +2,7 @@ using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
 using System;
+using AvaloniaApplication1.Models;
 
 namespace AvaloniaApplication1.ViewModels.Widgets;
 
@@ -11,7 +12,6 @@ public partial class GaugeWidgetViewModel : WidgetViewModelBase
     public string DataSourceTag { get; }
 
     // Текстові поля
-    [ObservableProperty] private string _title;
     [ObservableProperty] private string _unit;
 
     // Налаштування шкали
@@ -27,6 +27,10 @@ public partial class GaugeWidgetViewModel : WidgetViewModelBase
     // Пороги для зміни кольору (можна винести в параметри конструктора)
     public double LowWarningThreshold { get; set; }
     public double HighCriticalThreshold { get; set; }
+    
+    // Що саме задали при створенні (null = "рахувати за замовчуванням"), щоб зберегти це як є
+    private readonly double? _customLowWarning;
+    private readonly double? _customHighCritical;
 
     public GaugeWidgetViewModel(string dataSourceTag, string title, string unit, double min, double max, double? 
         customLowWarning = null, double? customHighCritical = null)
@@ -36,6 +40,9 @@ public partial class GaugeWidgetViewModel : WidgetViewModelBase
         Unit = unit;
         MinValue = min;
         MaxValue = max;
+        
+        _customLowWarning = customLowWarning;
+        _customHighCritical = customHighCritical;
         
         LowWarningThreshold = customLowWarning ?? (min + (max - min) * 0.4);
         HighCriticalThreshold = customHighCritical ?? (min + (max - min) * 0.8);
@@ -53,6 +60,28 @@ public partial class GaugeWidgetViewModel : WidgetViewModelBase
             }
         });
     }
+    // Створення зі збереженого конфігу
+    public GaugeWidgetViewModel(GaugeWidgetConfig config, string dataSourceTag)
+        : this(dataSourceTag, config.Title, config.Unit, config.Min, config.Max,
+            config.LowWarning, config.HighCritical)
+    {
+        LoadCommon(config);
+    }
+    
+    public override WidgetConfig ToConfig()
+    {
+        var config = new GaugeWidgetConfig
+        {
+            Unit = Unit,
+            Min = MinValue,
+            Max = MaxValue,
+            LowWarning = _customLowWarning,
+            HighCritical = _customHighCritical
+        };
+        SaveCommon(config);
+        return config;
+    }
+
 
     // Цей метод автоматично викликається Toolkit-ом, коли змінюється _value
     partial void OnValueChanged(double value)

@@ -16,37 +16,35 @@
                       VerticalScrollBarVisibility="Auto">
             <LayoutTransformControl x:Name="ZoomHost">
                 <ItemsControl ItemsSource="{Binding Widgets}">
-                    <ItemsControl ItemsSource="{Binding Widgets}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <Canvas Width="{Binding BackgroundImage.Size.Width, FallbackValue=1920}"
-                                        Height="{Binding BackgroundImage.Size.Height, FallbackValue=1080}">
-                                    <Canvas.Background>
-                                        <ImageBrush Source="{Binding BackgroundImage}"
-                                                    Stretch="None" AlignmentX="Left" AlignmentY="Top" />
-                                    </Canvas.Background>
-                                </Canvas>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas Width="{Binding BackgroundImage.Size.Width, FallbackValue=1920}"
+                                    Height="{Binding BackgroundImage.Size.Height, FallbackValue=1080}">
+                                <Canvas.Background>
+                                    <ImageBrush Source="{Binding BackgroundImage}"
+                                                Stretch="None" AlignmentX="Left" AlignmentY="Top" />
+                                </Canvas.Background>
+                            </Canvas>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
 
-                        <ItemsControl.Styles>
-                            <Style Selector="ContentPresenter" x:DataType="widgetsVm:WidgetViewModelBase">
-                                <Setter Property="Canvas.Left" Value="{Binding X}" />
-                                <Setter Property="Canvas.Top" Value="{Binding Y}" />
-                            </Style>
-                        </ItemsControl.Styles>
+                    <ItemsControl.Styles>
+                        <Style Selector="ContentPresenter" x:DataType="widgetsVm:WidgetViewModelBase">
+                            <Setter Property="Canvas.Left" Value="{Binding X}" />
+                            <Setter Property="Canvas.Top" Value="{Binding Y}" />
+                        </Style>
+                    </ItemsControl.Styles>
 
-                        <ItemsControl.DataTemplates>
+                    <ItemsControl.DataTemplates>
         
-                            <DataTemplate DataType="{x:Type widgetsVm:GaugeWidgetViewModel}">
-                                <widgetsViews:GaugeWidgetView />
-                            </DataTemplate>
+                        <DataTemplate DataType="{x:Type widgetsVm:GaugeWidgetViewModel}">
+                            <widgetsViews:GaugeWidgetView />
+                        </DataTemplate>
 
-                            <DataTemplate DataType="{x:Type widgetsVm:ChartWidgetViewModel}">
-                                <widgetsViews:ChartWidgetView />
-                            </DataTemplate>
-                        </ItemsControl.DataTemplates>
-                    </ItemsControl>
+                        <DataTemplate DataType="{x:Type widgetsVm:ChartWidgetViewModel}">
+                            <widgetsViews:ChartWidgetView />
+                        </DataTemplate>
+                    </ItemsControl.DataTemplates>
                 </ItemsControl>
             </LayoutTransformControl>
         </ScrollViewer>
