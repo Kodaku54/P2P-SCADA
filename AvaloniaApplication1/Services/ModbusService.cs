@@ -3,7 +3,6 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentModbus;
-using CommunityToolkit.Mvvm.Messaging;
 using AvaloniaApplication1.Models;
 using AvaloniaApplication1.ViewModels;
 
@@ -82,8 +81,7 @@ public class ModbusService
 
                             // Відправляємо дані з унікальним тегом (наприклад "100.96.134.108_Boiler_Temp")
                             string messageTag = $"{_config.IpAddress}_{sensor.Tag}";
-                            WeakReferenceMessenger.Default.Send(
-                                new Messages.SensorDataMessage(messageTag, finalValue));
+                            TagStore.Default.Update(messageTag, finalValue);
 
                             // МІКРО-ПАУЗА: Захист малинки від "флуду" запитами (10 мс)
                             await Task.Delay(10, ct);

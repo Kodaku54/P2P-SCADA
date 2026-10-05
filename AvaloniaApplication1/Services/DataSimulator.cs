@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Avalonia.Threading;
-using AvaloniaApplication1.ViewModels;
-using CommunityToolkit.Mvvm.Messaging;
 
 namespace AvaloniaApplication1.Services;
 
@@ -44,7 +42,7 @@ public sealed class DataSimulator
 
             value = Math.Round(Math.Clamp(value, min, max), 2);
 
-            WeakReferenceMessenger.Default.Send(new Messages.SensorDataMessage(tag, value));
+            TagStore.Default.Update(tag, value);
         }
     }
 }
