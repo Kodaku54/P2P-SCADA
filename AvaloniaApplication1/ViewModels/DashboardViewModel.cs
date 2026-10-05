@@ -1,75 +1,63 @@
-using System.IO;
-using Avalonia.Media.Imaging;
-using Avalonia.Platform;
-using AvaloniaApplication1.Services;
-using AvaloniaApplication1.ViewModels.Widgets;
-using CommunityToolkit.Mvvm.Messaging;
-
-namespace AvaloniaApplication1.ViewModels;
 using System;
 using System.Collections.ObjectModel;
-using Avalonia.Threading;
+using System.IO;
+using System.Linq;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
+using AvaloniaApplication1.Models;
+using AvaloniaApplication1.ViewModels.Widgets;
 using CommunityToolkit.Mvvm.ComponentModel;
 
+namespace AvaloniaApplication1.ViewModels;
 
 public partial class DashboardViewModel : ViewModelBase
 {
-    public ObservableCollection<Widgets.WidgetViewModelBase> Widgets { get; } = new();
-    public string DeviceIp { get; }
-    public string DashboardTitle { get; }
+    public Guid Id { get; }
+
+    // Назву залишаємо під старим іменем, щоб не міняти XAML (MainWindow, DashboardWindow).
+    // Атрибут генерує публічну властивість DashboardTitle зі сповіщенням про зміну.
+    [ObservableProperty] private string _dashboardTitle = string.Empty;
+
+    public ObservableCollection<WidgetViewModelBase> Widgets { get; } = new();
     public Bitmap? BackgroundImage { get; set; }
 
-    private readonly DataSimulator _simulator; //Симулятор
-    
-    public DashboardViewModel(string ipAddress, string title, string? backgroundImagePath = null)
+    // Ім'я файлу фону зберігаємо окремо: навіть якщо картинку не вдалося завантажити,
+    // при збереженні воно не має зникнути з конфігу.
+    private readonly string? _backgroundFile;
+
+    /// <param name="assetsFolder">Папка, у якій лежить фонова картинка (для звичайних файлів).</param>
+    public DashboardViewModel(DashboardConfig config, WidgetFactory factory, string? assetsFolder = null)
     {
-        DeviceIp = ipAddress;
-        DashboardTitle = title;
-        BackgroundImage = LoadBitmap(backgroundImagePath);
-        Widgets = new ObservableCollection<WidgetViewModelBase>();
-        string tagPrefix = $"{ipAddress}_";
-        // Обидва віджети слухають один і той самий тег
-        // Widgets.Add(new GaugeWidgetViewModel("Boiler_1_Temp", "Температура", "°C", 30, 70)
-        // {
-        //     X = 200, Y = 200
-        // });
-        // // Widgets.Add(new ChartWidgetViewModel("Boiler_1_Temp1", "Графік котла", "°C", 300));
-        // Widgets.Add(new ChartWidgetViewModel("100.96.134.108_Sensor1", "Датчик з Малинки", "Unit", 50)
-        // {
-        //     X = 1, Y = 1
-        // });
-        
-        
-        //Старт симулятору
-        string chartTag = $"{ipAddress}_Sensor1";   // було "100.96.134.108_Sensor1" — поверніть для реальних даних
-        string gaugeTag = $"{ipAddress}_Temp";
+        Id = config.Id;
+        DashboardTitle = config.Name;
+        _backgroundFile = config.BackgroundFile;
+        BackgroundImage = LoadBitmap(config.BackgroundFile, assetsFolder);
 
-        Widgets.Add(new ChartWidgetViewModel(chartTag, "Датчик з Малинки", "Unit", 50)
-        {
-            X = 20, Y = 20, Height = 200,  Width = 300
-        });
-        Widgets.Add(new GaugeWidgetViewModel(gaugeTag, "Температура", "°C", 0, 100)
-        {
-            X = 450, Y = 20, Height = 200,  Width = 300
-        });
-
-        _simulator = new DataSimulator(500)
-            .Add(chartTag, 0, 100, periodSeconds: 30)
-            .Add(gaugeTag, 0, 100, periodSeconds: 20);
-        _simulator.Start();
+        foreach (var widgetConfig in config.Widgets)
+            Widgets.Add(factory.Create(widgetConfig));
     }
 
-    private static Bitmap? LoadBitmap(string? path)
+    // Дашборд -> конфіг, готовий до запису у файл
+    public DashboardConfig ToConfig() => new()
     {
-        if (string.IsNullOrWhiteSpace(path)) return null;
+        Id = Id,
+        Name = DashboardTitle,
+        BackgroundFile = _backgroundFile,
+        Widgets = Widgets.Select(w => w.ToConfig()).ToList()
+    };
+
+    private static Bitmap? LoadBitmap(string? file, string? assetsFolder)
+    {
+        if (string.IsNullOrWhiteSpace(file)) return null;
 
         try
         {
-            // Ресурс усередині програми: "avares://AvaloniaApplication1/Assets/scheme.png"
-            if (path.StartsWith("avares://"))
-                return new Bitmap(AssetLoader.Open(new Uri(path)));
+            // Ресурс усередині програми: "avares://AvaloniaApplication1/Assets/scheme.jpeg"
+            if (file.StartsWith("avares://"))
+                return new Bitmap(AssetLoader.Open(new Uri(file)));
 
-            // Звичайний файл на диску: "/home/user/schemes/plant.png"
+            // Файл на диску: або поруч із дашбордом (assetsFolder), або за повним шляхом
+            string path = assetsFolder is null ? file : Path.Combine(assetsFolder, file);
             if (File.Exists(path))
                 return new Bitmap(path);
         }
@@ -80,6 +68,4 @@ public partial class DashboardViewModel : ViewModelBase
 
         return null;
     }
-
-    private double _timeStep = 0;
 }
