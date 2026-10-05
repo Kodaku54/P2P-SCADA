@@ -3,12 +3,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AvaloniaApplication1.Views;
 using System.Linq;
+using AvaloniaApplication1.Services;
 
 namespace AvaloniaApplication1.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
     public ObservableCollection<DashboardViewModel> Dashboards { get; }
+    private readonly DataSimulator? _simulator;
 
     [RelayCommand]
     private void Login()
@@ -35,11 +37,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
-        Dashboards = new ObservableCollection<DashboardViewModel>();
-        Dashboards.Add(new DashboardViewModel("100.85.42.12", "Лабораторія RPi 1",
-            "avares://AvaloniaApplication1/Assets/scheme.jpeg"));
-        Dashboards.Add(new DashboardViewModel("100.85.42.13", "Лабораторія 2 RPi 3",
-            "avares://AvaloniaApplication1/Assets/scheme.jpeg"));
+        var config = ConfigManager.Load();
+        Dashboards = new ObservableCollection<DashboardViewModel>(DashboardFactory.Create(config));
+
+        _simulator = DashboardFactory.CreateSimulator(config);
+        _simulator?.Start();
     }
     [RelayCommand]
     private void DetachDashboard(DashboardViewModel dashboardToDetach)
