@@ -33,7 +33,7 @@ public static class DashboardFactory
             if (widget != null) widgets.Add(widget);
         }
 
-        return new DashboardViewModel(device.Id, dash.Title, dash.BackgroundImage, widgets);
+        return new DashboardViewModel(dash, widgets);
     }
 
     private static WidgetViewModelBase? CreateWidget(DeviceConfig device, WidgetConfig w)

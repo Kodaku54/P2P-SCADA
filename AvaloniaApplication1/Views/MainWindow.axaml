@@ -57,21 +57,32 @@
                                             CommandParameter="{Binding}"
                                             Background="#3E3E42"
                                             CornerRadius="5"
-                                            Padding="12,6,36,6">
+                                            Padding="12,6,64,6">
                                         <TextBlock Text="{Binding DashboardTitle}" />
                                     </Button>
                                     
-                                    <Button Content="🗗"
-                                            ToolTip.Tip="Відкрити в новому вікні"
-                                            Command="{Binding #Home.((vm:MainWindowViewModel)DataContext).DetachDashboardCommand}"
-                                            CommandParameter="{Binding}"
-                                            HorizontalAlignment="Right"
-                                            VerticalAlignment="Center"
-                                            Margin="0,0,4,0"
-                                            Padding="4,2"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            Foreground="Green" />
+                                    <StackPanel Orientation="Horizontal" Spacing="2"
+                                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                Margin="0,0,4,0">
+
+                                        <Button Content="🗗"
+                                                ToolTip.Tip="Відкрити в новому вікні"
+                                                Command="{Binding #Home.((vm:MainWindowViewModel)DataContext).DetachDashboardCommand}"
+                                                CommandParameter="{Binding}"
+                                                Padding="4,2"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Foreground="Green" />
+
+                                        <Button Content="✕"
+                                                ToolTip.Tip="Видалити дашборд"
+                                                Command="{Binding #Home.((vm:MainWindowViewModel)DataContext).DeleteDashboardCommand}"
+                                                CommandParameter="{Binding}"
+                                                Padding="4,2"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Foreground="IndianRed" />
+                                    </StackPanel>
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>

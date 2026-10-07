@@ -8,6 +8,8 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using AvaloniaApplication1.Models;
 using AvaloniaApplication1.Services;
+using MsBox.Avalonia;
+using MsBox.Avalonia.Enums;
 
 namespace AvaloniaApplication1.ViewModels;
 
@@ -61,6 +63,33 @@ public partial class MainWindowViewModel : ViewModelBase
 
         Dashboards.Add(dashboard);
         CurrentPage = dashboard;
+    }
+    
+    [RelayCommand]
+    private async Task DeleteDashboardAsync(DashboardViewModel? dashboard)
+    {
+        if (dashboard == null) return;
+
+        var box = MessageBoxManager.GetMessageBoxStandard(
+            "Видалення дашборду",
+            $"Видалити дашборд \"{dashboard.DashboardTitle}\"?\nЦю дію не можна скасувати.",
+            ButtonEnum.YesNo,
+            MsBox.Avalonia.Enums.Icon.Warning);
+
+        if (await box.ShowAsync() != ButtonResult.Yes) return;
+
+        // 1. Прибираємо з конфігу й зберігаємо
+        _config.Dashboards.Remove(dashboard.Config);
+        ConfigManager.Save(_config);
+
+        // 2. Прибираємо з інтерфейсу; якщо він був відкритий, перемикаємось на інший
+        var wasCurrent = CurrentPage == dashboard;
+        Dashboards.Remove(dashboard);
+        if (wasCurrent)
+            CurrentPage = Dashboards.FirstOrDefault();
+
+        // 3. Відписуємо віджети від TagStore
+        dashboard.Dispose();
     }
 
     public MainWindowViewModel()

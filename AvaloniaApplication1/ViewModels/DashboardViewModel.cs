@@ -5,24 +5,29 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using AvaloniaApplication1.ViewModels.Widgets;
 using System.Collections.Generic;
+using AvaloniaApplication1.Models;
 
 namespace AvaloniaApplication1.ViewModels;
 
 public partial class DashboardViewModel : ViewModelBase
 {
+    public DashboardConfig Config { get; }
     public ObservableCollection<WidgetViewModelBase> Widgets { get; }
-    public string DeviceId { get; }
-    public string DashboardTitle { get; }
+    public string DeviceId => Config.DeviceId;
+    public string DashboardTitle => Config.Title;
     public Bitmap? BackgroundImage { get; set; }
 
     
-    public DashboardViewModel(string deviceId, string title, string? backgroundImagePath,
-        IEnumerable<WidgetViewModelBase> widgets)
+    public DashboardViewModel(DashboardConfig config, IEnumerable<WidgetViewModelBase> widgets)
     {
-        DeviceId = deviceId;
-        DashboardTitle = title;
-        BackgroundImage = LoadBitmap(backgroundImagePath);
+        Config = config;
+        BackgroundImage = LoadBitmap(config.BackgroundImage);
         Widgets = new ObservableCollection<WidgetViewModelBase>(widgets);
+    }
+    public void Dispose()
+    {
+        foreach (var widget in Widgets)
+            widget.Dispose();
     }
 
     private static Bitmap? LoadBitmap(string? path)
