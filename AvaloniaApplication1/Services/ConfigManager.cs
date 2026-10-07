@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Unicode;
 using AvaloniaApplication1.Models;
 
 namespace AvaloniaApplication1.Services;
@@ -14,7 +16,10 @@ public static class ConfigManager
         WriteIndented = true,
         PropertyNameCaseInsensitive = true,
         ReadCommentHandling = JsonCommentHandling.Skip,
-        AllowTrailingCommas = true
+        AllowTrailingCommas = true,
+        // Кирилицю й символи на кшталт "°" пишемо як є, а не як \uXXXX
+        Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic,
+            UnicodeRanges.LatinExtendedA, UnicodeRanges.LatinExtendedB, UnicodeRanges.Latin1Supplement)
     };
 
     public static string ConfigPath { get; } = Path.Combine(

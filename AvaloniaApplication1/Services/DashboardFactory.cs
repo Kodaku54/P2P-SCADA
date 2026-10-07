@@ -9,33 +9,31 @@ namespace AvaloniaApplication1.Services;
 
 public static class DashboardFactory
 {
-    // Єдине місце, де складається TagId: "{deviceId}/{sensorId}"
     public static string TagId(string deviceId, string sensor) => $"{deviceId}/{sensor}";
 
-    public static List<DashboardViewModel> Create(AppConfig config)
+    public static List<DashboardViewModel> Create(AppConfig config) =>
+        config.Dashboards
+            .Select(d => CreateDashboard(config, d))
+            .OfType<DashboardViewModel>()   // відкидає null
+            .ToList();
+
+    public static DashboardViewModel? CreateDashboard(AppConfig config, DashboardConfig dash)
     {
-        var result = new List<DashboardViewModel>();
-
-        foreach (var dash in config.Dashboards)
+        var device = config.Devices.FirstOrDefault(d => d.Id == dash.DeviceId);
+        if (device == null)
         {
-            var device = config.Devices.FirstOrDefault(d => d.Id == dash.DeviceId);
-            if (device == null)
-            {
-                Debug.WriteLine($"[Config] Дашборд '{dash.Title}': невідомий пристрій '{dash.DeviceId}', пропущено");
-                continue;
-            }
-
-            var widgets = new List<WidgetViewModelBase>();
-            foreach (var w in dash.Widgets)
-            {
-                var widget = CreateWidget(device, w);
-                if (widget != null) widgets.Add(widget);
-            }
-
-            result.Add(new DashboardViewModel(device.Id, dash.Title, dash.BackgroundImage, widgets));
+            Debug.WriteLine($"[Config] Дашборд '{dash.Title}': невідомий пристрій '{dash.DeviceId}', пропущено");
+            return null;
         }
 
-        return result;
+        var widgets = new List<WidgetViewModelBase>();
+        foreach (var w in dash.Widgets)
+        {
+            var widget = CreateWidget(device, w);
+            if (widget != null) widgets.Add(widget);
+        }
+
+        return new DashboardViewModel(device.Id, dash.Title, dash.BackgroundImage, widgets);
     }
 
     private static WidgetViewModelBase? CreateWidget(DeviceConfig device, WidgetConfig w)

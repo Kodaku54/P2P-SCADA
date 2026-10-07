@@ -1,0 +1,47 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:AvaloniaApplication1.ViewModels"
+        xmlns:models="using:AvaloniaApplication1.Models"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="AvaloniaApplication1.Views.AddDashboardWindow"
+        x:DataType="vm:AddDashboardViewModel"
+        Title="Add new Dashboard"
+        Width="420"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+    <StackPanel Spacing="12" Margin="20">
+
+        <StackPanel Spacing="4">
+            <TextBlock Text="Назва" />
+            <TextBox Text="{Binding Title}" Watermark="Наприклад: Котельня" />
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+            <TextBlock Text="Пристрій" />
+            <ComboBox ItemsSource="{Binding Devices}"
+                      SelectedItem="{Binding SelectedDevice}"
+                      HorizontalAlignment="Stretch">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="models:DeviceConfig">
+                        <TextBlock Text="{Binding Name}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+            <TextBlock Text="Фонове зображення (необов'язково)" />
+            <TextBox Text="{Binding BackgroundImage}"
+                     Watermark="avares://... або шлях до файлу" />
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Content="Скасувати" Command="{Binding CancelCommand}" />
+            <Button Content="Створити" Command="{Binding CreateCommand}" IsDefault="True" />
+        </StackPanel>
+
+    </StackPanel>
+</Window>

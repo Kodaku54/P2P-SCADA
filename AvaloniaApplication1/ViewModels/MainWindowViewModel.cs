@@ -3,6 +3,10 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AvaloniaApplication1.Views;
 using System.Linq;
+using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using AvaloniaApplication1.Models;
 using AvaloniaApplication1.Services;
 
 namespace AvaloniaApplication1.ViewModels;
@@ -10,6 +14,7 @@ namespace AvaloniaApplication1.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
     public ObservableCollection<DashboardViewModel> Dashboards { get; }
+    private readonly AppConfig _config;
     private readonly DataSimulator? _simulator;
 
     [RelayCommand]
@@ -34,13 +39,36 @@ public partial class MainWindowViewModel : ViewModelBase
             CurrentPage = selectedDashboard;
         }
     }
+    [RelayCommand]
+    private async Task AddDashboardAsync()
+    {
+        var owner = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        if (owner == null) return;
+
+        var dialogVm = new AddDashboardViewModel(_config.Devices);
+        var dialog = new AddDashboardWindow { DataContext = dialogVm };
+        dialogVm.CloseRequested += () => dialog.Close();
+
+        await dialog.ShowDialog(owner);
+
+        if (dialogVm.Result is not { } dashboardConfig) return; // скасовано
+
+        var dashboard = DashboardFactory.CreateDashboard(_config, dashboardConfig);
+        if (dashboard == null) return;
+
+        _config.Dashboards.Add(dashboardConfig);
+        ConfigManager.Save(_config);
+
+        Dashboards.Add(dashboard);
+        CurrentPage = dashboard;
+    }
 
     public MainWindowViewModel()
     {
-        var config = ConfigManager.Load();
-        Dashboards = new ObservableCollection<DashboardViewModel>(DashboardFactory.Create(config));
+        _config = ConfigManager.Load();
+        Dashboards = new ObservableCollection<DashboardViewModel>(DashboardFactory.Create(_config));
 
-        _simulator = DashboardFactory.CreateSimulator(config);
+        _simulator = DashboardFactory.CreateSimulator(_config);
         _simulator?.Start();
     }
     [RelayCommand]
