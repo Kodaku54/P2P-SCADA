@@ -33,10 +33,20 @@
         </StackPanel>
 
         <StackPanel Spacing="4">
-            <TextBlock Text="Фонове зображення (необов'язково)" />
-            <TextBox Text="{Binding BackgroundImage}"
-                     Watermark="avares://... або шлях до файлу" />
+            <TextBlock Text="Фонове зображення" />
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Margin="8,0,0,0"
+                        Content="Скинути"
+                        Command="{Binding ClearBackgroundCommand}" />
+                <Button DockPanel.Dock="Right" Margin="8,0,0,0"
+                        Content="Обрати…"
+                        Click="ChooseBackground_Click" />
+                <TextBlock Text="{Binding BackgroundDisplay}"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" />
+            </DockPanel>
         </StackPanel>
+        <TextBlock Text="{Binding ErrorMessage}" Foreground="IndianRed" TextWrapping="Wrap" />
 
         <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
             <Button Content="Скасувати" Command="{Binding CancelCommand}" />

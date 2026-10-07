@@ -6,6 +6,7 @@ using Avalonia.Platform;
 using AvaloniaApplication1.ViewModels.Widgets;
 using System.Collections.Generic;
 using AvaloniaApplication1.Models;
+using AvaloniaApplication1.Services;
 
 namespace AvaloniaApplication1.ViewModels;
 
@@ -36,13 +37,10 @@ public partial class DashboardViewModel : ViewModelBase
 
         try
         {
-            // Ресурс усередині програми: "avares://AvaloniaApplication1/Assets/scheme.png"
-            if (path.StartsWith("avares://"))
-                return new Bitmap(AssetLoader.Open(new Uri(path)));
-
-            // Звичайний файл на диску: "/home/user/schemes/plant.png"
-            if (File.Exists(path))
-                return new Bitmap(path);
+            // Ім'я файлу з папки Backgrounds або повний шлях
+            var filePath = ConfigManager.ResolveBackgroundPath(path);
+            if (File.Exists(filePath))
+                return new Bitmap(filePath);
         }
         catch (Exception ex)
         {

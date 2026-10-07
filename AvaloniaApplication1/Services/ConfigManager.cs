@@ -6,11 +6,39 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Unicode;
 using AvaloniaApplication1.Models;
+using System.Linq;
 
 namespace AvaloniaApplication1.Services;
 
 public static class ConfigManager
 {
+    public static string BackgroundsDirectory =>
+        Path.Combine(Path.GetDirectoryName(ConfigPath)!, "Backgrounds");
+    
+    public static string ResolveBackgroundPath(string value) =>
+        Path.IsPathRooted(value) ? value : Path.Combine(BackgroundsDirectory, value);
+    
+    public static string ImportBackground(string sourcePath)
+    {
+        Directory.CreateDirectory(BackgroundsDirectory);
+
+        var name = Path.GetFileName(sourcePath);
+        var baseName = Path.GetFileNameWithoutExtension(name);
+        var extension = Path.GetExtension(name);
+        var target = Path.Combine(BackgroundsDirectory, name);
+
+        // Якщо файл з такою назвою вже є, додаємо суфікс, щоб нічого не перезаписати
+        var counter = 1;
+        while (File.Exists(target))
+        {
+            name = $"{baseName}_{counter++}{extension}";
+            target = Path.Combine(BackgroundsDirectory, name);
+        }
+
+        File.Copy(sourcePath, target);
+        return name;
+    }
+    
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -62,6 +90,27 @@ public static class ConfigManager
         File.WriteAllText(tmp, JsonSerializer.Serialize(config, JsonOptions));
         File.Move(tmp, ConfigPath, overwrite: true);
     }
+    
+    public static void DeleteBackgroundIfUnused(AppConfig config, string? name)
+    {
+        // Чіпаємо лише файли, якими керує застосунок: просте ім'я без шляху
+        // (старі записи з "avares://..." чи повним шляхом на диску пропускаємо)
+        if (string.IsNullOrWhiteSpace(name) || Path.GetFileName(name) != name) return;
+
+        // Якщо інший дашборд використовує цей самий файл, лишаємо його
+        if (config.Dashboards.Any(d => d.BackgroundImage == name)) return;
+
+        try
+        {
+            var path = Path.Combine(BackgroundsDirectory, name);
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Config] Не вдалося видалити фон '{name}': {ex.Message}");
+        }
+    }
 
     // Шаблон для першого запуску
     private static AppConfig CreateDefault() => new()
@@ -86,7 +135,6 @@ public static class ConfigManager
             {
                 Title = "Лабораторія RPi 1",
                 DeviceId = "rpi-lab-1",
-                BackgroundImage = "avares://AvaloniaApplication1/Assets/scheme.jpeg",
                 Widgets = new List<WidgetConfig>
                 {
                     new() { Type = "Chart", Sensor = "pressure",    Title = "Тиск",        Unit = "бар", X = 20,  Y = 20, MaxPoints = 50 },

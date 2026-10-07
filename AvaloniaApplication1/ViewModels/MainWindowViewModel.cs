@@ -1,8 +1,8 @@
 ﻿using System.Collections.ObjectModel;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AvaloniaApplication1.Views;
-using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -81,6 +81,7 @@ public partial class MainWindowViewModel : ViewModelBase
         // 1. Прибираємо з конфігу й зберігаємо
         _config.Dashboards.Remove(dashboard.Config);
         ConfigManager.Save(_config);
+        ConfigManager.DeleteBackgroundIfUnused(_config, dashboard.Config.BackgroundImage);
 
         // 2. Прибираємо з інтерфейсу; якщо він був відкритий, перемикаємось на інший
         var wasCurrent = CurrentPage == dashboard;
