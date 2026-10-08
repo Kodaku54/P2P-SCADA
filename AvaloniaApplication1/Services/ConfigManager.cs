@@ -134,11 +134,10 @@ public static class ConfigManager
             new()
             {
                 Title = "Лабораторія RPi 1",
-                DeviceId = "rpi-lab-1",
                 Widgets = new List<WidgetConfig>
                 {
-                    new() { Type = "Chart", Sensor = "pressure",    Title = "Тиск",        Unit = "бар", X = 20,  Y = 20, MaxPoints = 50 },
-                    new() { Type = "Gauge", Sensor = "boiler_temp", Title = "Температура", Unit = "°C",  X = 450, Y = 20, Min = 0, Max = 100 }
+                    new() { Type = "Chart", DeviceId = "rpi-lab-1", Sensor = "pressure",    Title = "Тиск",        Unit = "бар", X = 20,  Y = 20, MaxPoints = 50 },
+                    new() { Type = "Gauge", DeviceId = "rpi-lab-1", Sensor = "boiler_temp", Title = "Температура", Unit = "°C",  X = 450, Y = 20, Min = 0, Max = 100 }
                 }
             }
         }

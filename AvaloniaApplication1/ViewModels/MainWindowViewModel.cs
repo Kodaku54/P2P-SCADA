@@ -47,7 +47,7 @@ public partial class MainWindowViewModel : ViewModelBase
         var owner = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
         if (owner == null) return;
 
-        var dialogVm = new AddDashboardViewModel(_config.Devices);
+        var dialogVm = new AddDashboardViewModel();
         var dialog = new AddDashboardWindow { DataContext = dialogVm };
         dialogVm.CloseRequested += () => dialog.Close();
 
@@ -56,7 +56,6 @@ public partial class MainWindowViewModel : ViewModelBase
         if (dialogVm.Result is not { } dashboardConfig) return; // скасовано
 
         var dashboard = DashboardFactory.CreateDashboard(_config, dashboardConfig);
-        if (dashboard == null) return;
 
         _config.Dashboards.Add(dashboardConfig);
         ConfigManager.Save(_config);

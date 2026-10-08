@@ -16,7 +16,6 @@ public class AppConfig
 public class DashboardConfig
 {
     public string Title { get; set; } = "Дашборд";
-    public string DeviceId { get; set; } = string.Empty;   // DeviceConfig.Id
     public string? BackgroundImage { get; set; }
     public List<WidgetConfig> Widgets { get; set; } = new();
 }
@@ -25,6 +24,7 @@ public class WidgetConfig
 {
     public string Type { get; set; } = "Gauge";            // "Gauge" або "Chart"
     public string Sensor { get; set; } = string.Empty;     // SensorConfig.Tag
+    public string DeviceId { get; set; } = string.Empty;   // DeviceConfig.Id
     public string Title { get; set; } = string.Empty;
     public string Unit { get; set; } = string.Empty;
 

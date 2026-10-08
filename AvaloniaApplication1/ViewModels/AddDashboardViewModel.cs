@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using AvaloniaApplication1.Models;
 using AvaloniaApplication1.Services;
@@ -10,15 +9,9 @@ namespace AvaloniaApplication1.ViewModels;
 
 public partial class AddDashboardViewModel : ViewModelBase
 {
-    public IReadOnlyList<DeviceConfig> Devices { get; }
-
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(CreateCommand))]
     private string _title = string.Empty;
-
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(CreateCommand))]
-    private DeviceConfig? _selectedDevice;
 
     // Що показуємо користувачеві поруч з кнопкою вибору фону
     [ObservableProperty]
@@ -36,12 +29,6 @@ public partial class AddDashboardViewModel : ViewModelBase
     // Вікно підписується на цю подію й закривається
     public event Action? CloseRequested;
 
-    public AddDashboardViewModel(IReadOnlyList<DeviceConfig> devices)
-    {
-        Devices = devices;
-        SelectedDevice = devices.Count > 0 ? devices[0] : null;
-    }
-
     // Викликається з вікна після вибору файлу. Сам файл копіюється пізніше, при "Створити"
     public void SetBackgroundFile(string path)
     {
@@ -57,7 +44,7 @@ public partial class AddDashboardViewModel : ViewModelBase
         BackgroundDisplay = "Без фону";
     }
 
-    private bool CanCreate() => !string.IsNullOrWhiteSpace(Title) && SelectedDevice != null;
+    private bool CanCreate() => !string.IsNullOrWhiteSpace(Title);
 
     [RelayCommand(CanExecute = nameof(CanCreate))]
     private void Create()
@@ -80,7 +67,6 @@ public partial class AddDashboardViewModel : ViewModelBase
         Result = new DashboardConfig
         {
             Title = Title.Trim(),
-            DeviceId = SelectedDevice!.Id,
             BackgroundImage = background
         };
         CloseRequested?.Invoke();

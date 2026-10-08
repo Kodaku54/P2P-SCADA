@@ -14,7 +14,6 @@ public partial class DashboardViewModel : ViewModelBase
 {
     public DashboardConfig Config { get; }
     public ObservableCollection<WidgetViewModelBase> Widgets { get; }
-    public string DeviceId => Config.DeviceId;
     public string DashboardTitle => Config.Title;
     public Bitmap? BackgroundImage { get; set; }
 
