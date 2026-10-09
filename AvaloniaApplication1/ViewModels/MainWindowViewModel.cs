@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -27,10 +28,13 @@ public partial class MainWindowViewModel : ViewModelBase
     }    
     [ObservableProperty]
     private ViewModelBase _currentPage;
+    
+    private Page1ViewModel? _page1;
+
     [RelayCommand]
     private void GoToPage1()
     {
-        CurrentPage = new Page1ViewModel();
+        CurrentPage = _page1 ??= new Page1ViewModel();
     }
     
     [RelayCommand]
@@ -99,6 +103,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         _simulator = DashboardFactory.CreateSimulator(_config);
         _simulator?.Start();
+        NetworkStatusService.Default.Start(TimeSpan.FromSeconds(5), simulate: _config.UseSimulator);
     }
     [RelayCommand]
     private void DetachDashboard(DashboardViewModel dashboardToDetach)
