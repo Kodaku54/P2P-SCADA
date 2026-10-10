@@ -1,4 +1,5 @@
 using System;
+using AvaloniaApplication1.Models;
 using AvaloniaApplication1.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -14,6 +15,8 @@ public partial class WidgetViewModelBase : ViewModelBase
     
     // true, якщо зв'язок з пристроєм втрачено і показане значення застаріле
     [ObservableProperty] private bool _isStale;
+    public WidgetConfig? Config { get; set; }
+    
 
     private IDisposable? _tagSubscription;
 

@@ -17,11 +17,16 @@
             <LayoutTransformControl x:Name="ZoomHost">
                 <ItemsControl x:Name="WidgetsHost"
                               Background="Transparent"
+                              Classes.editing="{Binding IsEditMode}"
                               ItemsSource="{Binding Widgets}">
 
                     <ItemsControl.ContextMenu>
                         <ContextMenu>
                             <MenuItem Header="Додати віджет…" Click="AddWidget_Click" />
+                            <Separator />
+                            <MenuItem Header="Режим редагування"
+                                      ToggleType="CheckBox"
+                                      IsChecked="{Binding IsEditMode, Mode=TwoWay}" />
                         </ContextMenu>
                     </ItemsControl.ContextMenu>
 
@@ -41,6 +46,10 @@
                         <Style Selector="ContentPresenter" x:DataType="widgetsVm:WidgetViewModelBase">
                             <Setter Property="Canvas.Left" Value="{Binding X}" />
                             <Setter Property="Canvas.Top" Value="{Binding Y}" />
+                        </Style>
+                        <Style Selector="ItemsControl.editing ContentPresenter">
+                            <Setter Property="BorderBrush" Value="Orange" />
+                            <Setter Property="BorderThickness" Value="1" />
                         </Style>
                     </ItemsControl.Styles>
 
@@ -63,6 +72,11 @@
                    IsHitTestVisible="False"
                    Foreground="#AAAAAA"
                    HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <TextBlock Text="✎ Режим редагування"
+                   IsVisible="{Binding IsEditMode}"
+                   IsHitTestVisible="False"
+                   Foreground="Orange" Margin="10"
+                   HorizontalAlignment="Left" VerticalAlignment="Top" />
 
         <StackPanel Orientation="Horizontal" Spacing="4" Margin="10"
                     HorizontalAlignment="Right" VerticalAlignment="Bottom">

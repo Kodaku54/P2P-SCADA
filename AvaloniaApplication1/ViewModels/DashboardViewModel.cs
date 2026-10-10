@@ -10,6 +10,7 @@ using AvaloniaApplication1.Models;
 using AvaloniaApplication1.Services;
 using AvaloniaApplication1.ViewModels.Widgets;
 using AvaloniaApplication1.Views;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AvaloniaApplication1.ViewModels;
 
@@ -95,5 +96,20 @@ public partial class DashboardViewModel : ViewModelBase
         }
 
         return null;
+    }
+    
+    [ObservableProperty] private bool _isEditMode;
+
+// Записує позицію й розмір віджета в конфіг (викликається один раз після перетягування)
+    public void SaveLayout(WidgetViewModelBase widget)
+    {
+        if (widget.Config == null) return;
+
+        widget.Config.X = widget.X;
+        widget.Config.Y = widget.Y;
+        widget.Config.Width = widget.Width;
+        widget.Config.Height = widget.Height;
+
+        ConfigManager.Save(_appConfig);
     }
 }

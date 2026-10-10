@@ -51,15 +51,14 @@ public static class DashboardFactory
             case "gauge":
                 return new GaugeWidgetViewModel(tagId, title, w.Unit, w.Min ?? 0, w.Max ?? 100, w.LowWarning, w.HighCritical)
                 {
-                    X = w.X, Y = w.Y, Width = w.Width, Height = w.Height
+                    X = w.X, Y = w.Y, Width = w.Width, Height = w.Height, Config = w
                 };
 
             case "chart":
                 return new ChartWidgetViewModel(tagId, title, w.Unit, w.MaxPoints ?? 50)
                 {
-                    X = w.X, Y = w.Y, Width = w.Width, Height = w.Height
+                    X = w.X, Y = w.Y, Width = w.Width, Height = w.Height, Config = w
                 };
-
             default:
                 Debug.WriteLine($"[Config] Невідомий тип віджета '{w.Type}', пропущено");
                 return null;

@@ -94,7 +94,6 @@ public static class ConfigManager
     public static void DeleteBackgroundIfUnused(AppConfig config, string? name)
     {
         // Чіпаємо лише файли, якими керує застосунок: просте ім'я без шляху
-        // (старі записи з "avares://..." чи повним шляхом на диску пропускаємо)
         if (string.IsNullOrWhiteSpace(name) || Path.GetFileName(name) != name) return;
 
         // Якщо інший дашборд використовує цей самий файл, лишаємо його
