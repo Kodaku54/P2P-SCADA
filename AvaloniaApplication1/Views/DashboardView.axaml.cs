@@ -6,16 +6,36 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Threading;
+using AvaloniaApplication1.ViewModels;
 
 namespace AvaloniaApplication1.Views;
 
 public partial class DashboardView : UserControl
 {
     private double _zoom = 1.0;
+    private Point _menuPoint;
     public DashboardView()
     {
         InitializeComponent();
         Scroller.AddHandler(PointerWheelChangedEvent, OnWheel, RoutingStrategies.Tunnel);
+        // Запам'ятовуємо точку правого кліку у координатах схеми (масштаб і прокрутка вже враховані)
+        WidgetsHost.AddHandler(PointerPressedEvent, OnHostPointerPressed, RoutingStrategies.Tunnel);
+    }
+    private void OnHostPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        var point = e.GetCurrentPoint(WidgetsHost);
+        if (point.Properties.IsRightButtonPressed)
+            _menuPoint = point.Position;
+    }
+
+    private async void AddWidget_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not DashboardViewModel vm) return;
+
+        // Вікно, в якому лежить цей дашборд (головне або відкріплене)
+        if (TopLevel.GetTopLevel(this) is not Window owner) return;
+
+        await vm.AddWidgetAsync(_menuPoint.X, _menuPoint.Y, owner);
     }
     private void OnWheel(object? sender, PointerWheelEventArgs e)
     {

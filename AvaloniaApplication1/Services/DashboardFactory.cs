@@ -9,12 +9,13 @@ namespace AvaloniaApplication1.Services;
 
 public static class DashboardFactory
 {
+    // Єдине місце, де складається TagId: "{deviceId}/{sensorId}"
     public static string TagId(string deviceId, string sensor) => $"{deviceId}/{sensor}";
 
-    public static List<DashboardViewModel> Create(AppConfig config) =>
-        config.Dashboards.Select(d => CreateDashboard(config, d)).ToList();
+    public static List<DashboardViewModel> Create(AppConfig config, DataSimulator? simulator) =>
+        config.Dashboards.Select(d => CreateDashboard(config, d, simulator)).ToList();
 
-    public static DashboardViewModel CreateDashboard(AppConfig config, DashboardConfig dash)
+    public static DashboardViewModel CreateDashboard(AppConfig config, DashboardConfig dash, DataSimulator? simulator)
     {
         var widgets = new List<WidgetViewModelBase>();
         foreach (var w in dash.Widgets)
@@ -23,10 +24,10 @@ public static class DashboardFactory
             if (widget != null) widgets.Add(widget);
         }
 
-        return new DashboardViewModel(dash, widgets);
+        return new DashboardViewModel(config, dash, widgets, simulator);
     }
 
-    private static WidgetViewModelBase? CreateWidget(AppConfig config, WidgetConfig w)
+    public static WidgetViewModelBase? CreateWidget(AppConfig config, WidgetConfig w)
     {
         // Кожен віджет сам вказує, з якого пристрою його датчик
         var device = config.Devices.FirstOrDefault(d => d.Id == w.DeviceId);
@@ -48,13 +49,13 @@ public static class DashboardFactory
         switch (w.Type.ToLowerInvariant())
         {
             case "gauge":
-                return new GaugeWidgetViewModel(tagId, title, w.Unit, w.Min, w.Max, w.LowWarning, w.HighCritical)
+                return new GaugeWidgetViewModel(tagId, title, w.Unit, w.Min ?? 0, w.Max ?? 100, w.LowWarning, w.HighCritical)
                 {
                     X = w.X, Y = w.Y, Width = w.Width, Height = w.Height
                 };
 
             case "chart":
-                return new ChartWidgetViewModel(tagId, title, w.Unit, w.MaxPoints)
+                return new ChartWidgetViewModel(tagId, title, w.Unit, w.MaxPoints ?? 50)
                 {
                     X = w.X, Y = w.Y, Width = w.Width, Height = w.Height
                 };
@@ -65,25 +66,29 @@ public static class DashboardFactory
         }
     }
 
-    // Симулятор для всіх віджетів із конфігу (діапазон бере з Min/Max віджета)
+    // Симулятор для всіх віджетів із конфігу
     public static DataSimulator? CreateSimulator(AppConfig config)
     {
         if (!config.UseSimulator) return null;
 
         var simulator = new DataSimulator(500);
-        var seen = new HashSet<string>();
-        var index = 0;
-
         foreach (var w in config.Dashboards.SelectMany(d => d.Widgets))
-        {
-            if (string.IsNullOrWhiteSpace(w.DeviceId)) continue;
-
-            var tagId = TagId(w.DeviceId, w.Sensor);
-            if (!seen.Add(tagId)) continue;
-
-            simulator.Add(tagId, w.Min, w.Max, periodSeconds: 15 + 5 * index++);
-        }
+            AddSimulatedSignal(simulator, w);
 
         return simulator;
+    }
+
+    // Підключає тег віджета до симулятора (діапазон з Min/Max, для графіка 0..100)
+    public static void AddSimulatedSignal(DataSimulator simulator, WidgetConfig w)
+    {
+        if (string.IsNullOrWhiteSpace(w.DeviceId)) return;
+
+        var tagId = TagId(w.DeviceId, w.Sensor);
+
+        // Стабільний "випадковий" період, щоб різні сигнали не рухались синхронно
+        var hash = 0;
+        foreach (var c in tagId) hash += c;
+
+        simulator.Add(tagId, w.Min ?? 0, w.Max ?? 100, periodSeconds: 15 + hash % 15);
     }
 }

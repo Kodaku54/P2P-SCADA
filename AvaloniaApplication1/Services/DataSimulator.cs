@@ -10,6 +10,8 @@ public sealed class DataSimulator
     private readonly List<(string Tag, double Min, double Max, double Period)> _signals = new();
     private readonly Random _rng = new();
     private double _t;
+    private readonly HashSet<string> _tags = new();
+
 
     public DataSimulator(double intervalMs = 500)
     {
@@ -20,6 +22,8 @@ public sealed class DataSimulator
     // Додає сигнал: синусоїда в діапазоні [min, max] з періодом у секундах і невеликим шумом
     public DataSimulator Add(string tag, double min, double max, double periodSeconds = 20)
     {
+        if (!_tags.Add(tag)) return this; // цей тег уже генерується
+
         _signals.Add((tag, min, max, periodSeconds));
         return this;
     }

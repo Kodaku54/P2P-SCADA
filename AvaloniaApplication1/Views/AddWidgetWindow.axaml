@@ -1,0 +1,139 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:AvaloniaApplication1.ViewModels"
+        xmlns:models="using:AvaloniaApplication1.Models"
+        x:Class="AvaloniaApplication1.Views.AddWidgetWindow"
+        x:DataType="vm:AddWidgetViewModel"
+        Title="Новий віджет"
+        Width="440"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+    <StackPanel Spacing="12" Margin="20">
+
+        <!-- Пристрій -->
+        <StackPanel Spacing="4">
+            <TextBlock Text="Пристрій" />
+            <ComboBox ItemsSource="{Binding Devices}"
+                      SelectedItem="{Binding SelectedDevice}"
+                      HorizontalAlignment="Stretch">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:DeviceOption">
+                        <TextBlock Text="{Binding Display}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBlock IsVisible="{Binding HasNoDevices}"
+                       Text="Пристроїв немає. Перевірте Tailscale або додайте пристрій у config.json."
+                       Foreground="IndianRed" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <!-- Датчик: наявний або новий -->
+        <StackPanel Spacing="4">
+            <DockPanel>
+                <Button DockPanel.Dock="Right"
+                        Content="{Binding NewSensorToggleText}"
+                        Command="{Binding ToggleNewSensorCommand}" />
+                <TextBlock Text="Датчик" VerticalAlignment="Center" />
+            </DockPanel>
+
+            <ComboBox IsVisible="{Binding !IsNewSensor}"
+                      ItemsSource="{Binding Sensors}"
+                      SelectedItem="{Binding SelectedSensor}"
+                      HorizontalAlignment="Stretch">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="models:SensorConfig">
+                        <TextBlock Text="{Binding Tag}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+
+            <Border IsVisible="{Binding IsNewSensor}"
+                    BorderBrush="Gray" BorderThickness="1" CornerRadius="4" Padding="10">
+                <StackPanel Spacing="8">
+
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="Ім'я датчика" FontSize="12" Opacity="0.7" />
+                        <TextBox Text="{Binding NewTag}" Watermark="Наприклад: boiler_temp" />
+                    </StackPanel>
+
+                    <Grid ColumnDefinitions="*,*">
+                        <StackPanel Grid.Column="0" Spacing="2" Margin="0,0,4,0">
+                            <TextBlock Text="Unit (slave ID)" FontSize="12" Opacity="0.7" />
+                            <NumericUpDown Value="{Binding NewUnitId}"
+                                           Minimum="0" Maximum="247" FormatString="0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="2" Margin="4,0,0,0">
+                            <TextBlock Text="Адреса регістра" FontSize="12" Opacity="0.7" />
+                            <NumericUpDown Value="{Binding NewAddress}"
+                                           Minimum="0" Maximum="65535" FormatString="0" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,*">
+                        <StackPanel Grid.Column="0" Spacing="2" Margin="0,0,4,0">
+                            <TextBlock Text="Функція" FontSize="12" Opacity="0.7" />
+                            <ComboBox ItemsSource="{Binding Areas}"
+                                      SelectedItem="{Binding NewArea}"
+                                      HorizontalAlignment="Stretch" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="2" Margin="4,0,0,0">
+                            <TextBlock Text="Тип даних" FontSize="12" Opacity="0.7" />
+                            <ComboBox ItemsSource="{Binding DataTypes}"
+                                      SelectedItem="{Binding NewDataType}"
+                                      IsEnabled="{Binding IsDataTypeEditable}"
+                                      HorizontalAlignment="Stretch" />
+                        </StackPanel>
+                    </Grid>
+
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- Віджет -->
+        <StackPanel Spacing="4">
+            <TextBlock Text="Тип віджета" />
+            <ComboBox ItemsSource="{Binding WidgetTypes}"
+                      SelectedItem="{Binding SelectedType}"
+                      HorizontalAlignment="Stretch" />
+        </StackPanel>
+
+        <Grid ColumnDefinitions="2*,*">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,4,0">
+                <TextBlock Text="Заголовок" />
+                <TextBox Text="{Binding Title}" Watermark="За замовчуванням: ім'я датчика" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="4" Margin="4,0,0,0">
+                <TextBlock Text="Одиниці" />
+                <TextBox Text="{Binding Unit}" Watermark="°C" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Тільки Gauge -->
+        <Grid IsVisible="{Binding IsGauge}" ColumnDefinitions="*,*">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,4,0">
+                <TextBlock Text="Мінімум шкали" />
+                <NumericUpDown Value="{Binding Min}" FormatString="0.##" Increment="1" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="4" Margin="4,0,0,0">
+                <TextBlock Text="Максимум шкали" />
+                <NumericUpDown Value="{Binding Max}" FormatString="0.##" Increment="1" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Тільки Chart -->
+        <StackPanel IsVisible="{Binding IsChart}" Spacing="4">
+            <TextBlock Text="Кількість точок на графіку" />
+            <NumericUpDown Value="{Binding MaxPoints}" Minimum="2" Maximum="1000" FormatString="0" />
+        </StackPanel>
+
+        <TextBlock Text="{Binding ErrorMessage}" Foreground="IndianRed" TextWrapping="Wrap" />
+
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Content="Скасувати" Command="{Binding CancelCommand}" />
+            <Button Content="Створити" Command="{Binding CreateCommand}" IsDefault="True" />
+        </StackPanel>
+
+    </StackPanel>
+</Window>

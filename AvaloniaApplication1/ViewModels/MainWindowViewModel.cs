@@ -59,7 +59,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (dialogVm.Result is not { } dashboardConfig) return; // скасовано
 
-        var dashboard = DashboardFactory.CreateDashboard(_config, dashboardConfig);
+        var dashboard = DashboardFactory.CreateDashboard(_config, dashboardConfig, _simulator);
 
         _config.Dashboards.Add(dashboardConfig);
         ConfigManager.Save(_config);
@@ -99,9 +99,9 @@ public partial class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel()
     {
         _config = ConfigManager.Load();
-        Dashboards = new ObservableCollection<DashboardViewModel>(DashboardFactory.Create(_config));
-
         _simulator = DashboardFactory.CreateSimulator(_config);
+        Dashboards = new ObservableCollection<DashboardViewModel>(DashboardFactory.Create(_config, _simulator));
+
         _simulator?.Start();
         NetworkStatusService.Default.Start(TimeSpan.FromSeconds(5), simulate: _config.UseSimulator);
     }
