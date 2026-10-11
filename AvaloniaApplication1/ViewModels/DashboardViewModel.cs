@@ -24,7 +24,12 @@ public partial class DashboardViewModel : ViewModelBase
     public DashboardConfig Config { get; }
     public ObservableCollection<WidgetViewModelBase> Widgets { get; }
     public string DashboardTitle => Config.Title;
-    public Bitmap? BackgroundImage { get; set; }
+    private Bitmap? _backgroundImage;
+    public Bitmap? BackgroundImage
+    {
+        get => _backgroundImage;
+        set => SetProperty(ref _backgroundImage, value);
+    }
     public event Action? DevicesChanged;
 
     // Для підказки на порожньому дашборді
@@ -109,7 +114,6 @@ public partial class DashboardViewModel : ViewModelBase
         widget.Dispose();
         Widgets[index] = fresh;
     }
-
     public async Task DeleteWidgetAsync(WidgetViewModelBase widget)
     {
         var name = widget.Config?.Title ?? "віджет";
@@ -178,5 +182,31 @@ public partial class DashboardViewModel : ViewModelBase
         widget.Config.Height = widget.Height;
 
         ConfigManager.Save(_appConfig);
+    }
+    // Назва й фон дашборду тим самим діалогом
+    public async Task EditDashboardAsync(Window owner)
+    {
+        var oldBackground = Config.BackgroundImage;
+
+        var dialogVm = new AddDashboardViewModel(Config);
+        var dialog = new AddDashboardWindow { DataContext = dialogVm };
+        dialogVm.CloseRequested += () => dialog.Close();
+
+        await dialog.ShowDialog(owner);
+
+        if (dialogVm.Result == null) return; // скасовано
+
+        // Діалог уже змінив DashboardConfig на місці
+        ConfigManager.Save(_appConfig);
+
+        OnPropertyChanged(nameof(DashboardTitle)); // оновлює назву вкладки
+
+        if (Config.BackgroundImage != oldBackground)
+        {
+            BackgroundImage = LoadBitmap(Config.BackgroundImage);
+
+            // Старий файл видаляємо, якщо його більше ніхто не використовує
+            ConfigManager.DeleteBackgroundIfUnused(_appConfig, oldBackground);
+        }
     }
 }

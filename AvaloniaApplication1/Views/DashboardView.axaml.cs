@@ -106,7 +106,14 @@ public partial class DashboardView : UserControl
                 if (owner != null) await vm.AddWidgetAsync(x, y, owner);
             };
 
+            var settings = new MenuItem { Header = "Налаштування дашборду…" };
+            settings.Click += async (_, _) =>
+            {
+                if (owner != null) await vm.EditDashboardAsync(owner);
+            };
+
             items.Add(add);
+            items.Add(settings);
         }
 
         items.Add(new Separator());

@@ -25,14 +25,33 @@ public partial class AddDashboardViewModel : ViewModelBase
 
     // Заповнюється після "Створити"; null, якщо діалог скасовано
     public DashboardConfig? Result { get; private set; }
+    private readonly DashboardConfig? _existing;
+    private bool _backgroundChanged;   // користувач обрав новий файл або скинув фон
+
+    public bool IsEditing => _existing != null;
+    public string WindowTitle => IsEditing ? "Налаштування дашборду" : "Новий дашборд";
+    public string ActionText => IsEditing ? "Зберегти" : "Створити";
 
     // Вікно підписується на цю подію й закривається
     public event Action? CloseRequested;
+    
+    public AddDashboardViewModel() { }
+
+// Режим редагування наявного дашборду
+    public AddDashboardViewModel(DashboardConfig existing)
+    {
+        _existing = existing;
+        Title = existing.Title;
+        BackgroundDisplay = string.IsNullOrWhiteSpace(existing.BackgroundImage)
+            ? "Без фону"
+            : existing.BackgroundImage;
+    }
 
     // Викликається з вікна після вибору файлу. Сам файл копіюється пізніше, при "Створити"
     public void SetBackgroundFile(string path)
     {
         _backgroundSourcePath = path;
+        _backgroundChanged = true;
         BackgroundDisplay = Path.GetFileName(path);
         ErrorMessage = null;
     }
@@ -41,6 +60,7 @@ public partial class AddDashboardViewModel : ViewModelBase
     private void ClearBackground()
     {
         _backgroundSourcePath = null;
+        _backgroundChanged = true;
         BackgroundDisplay = "Без фону";
     }
 
@@ -49,26 +69,43 @@ public partial class AddDashboardViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanCreate))]
     private void Create()
     {
-        string? background = null;
-        if (_backgroundSourcePath != null)
+        // За замовчуванням фон лишається як був (для нового дашборду це null)
+        string? background = _existing?.BackgroundImage;
+
+        if (_backgroundChanged)
         {
-            try
+            background = null;
+            if (_backgroundSourcePath != null)
             {
-                background = ConfigManager.ImportBackground(_backgroundSourcePath);
-            }
-            catch (Exception ex)
-            {
-                // Файл могли видалити чи перемістити між вибором і "Створити"
-                ErrorMessage = $"Не вдалося скопіювати зображення: {ex.Message}";
-                return;
+                try
+                {
+                    background = ConfigManager.ImportBackground(_backgroundSourcePath);
+                }
+                catch (Exception ex)
+                {
+                    // Файл могли видалити чи перемістити між вибором і збереженням
+                    ErrorMessage = $"Не вдалося скопіювати зображення: {ex.Message}";
+                    return;
+                }
             }
         }
 
-        Result = new DashboardConfig
+        if (_existing != null)
         {
-            Title = Title.Trim(),
-            BackgroundImage = background
-        };
+            // Редагування: змінюємо наявний конфіг на місці
+            _existing.Title = Title.Trim();
+            _existing.BackgroundImage = background;
+            Result = _existing;
+        }
+        else
+        {
+            Result = new DashboardConfig
+            {
+                Title = Title.Trim(),
+                BackgroundImage = background
+            };
+        }
+
         CloseRequested?.Invoke();
     }
 
