@@ -7,7 +7,8 @@
              xmlns:widgets="clr-namespace:AvaloniaApplication1.ViewModels.Widgets"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="AvaloniaApplication1.Views.Widgets.GaugeWidgetView"
-             x:DataType="widgets:GaugeWidgetViewModel">
+             x:DataType="widgets:GaugeWidgetViewModel"
+             Classes.stale="{Binding IsStale}">
     <UserControl.Styles>
         <Style Selector="Arc.critical, StackPanel.critical">
             <Style.Animations>
@@ -57,6 +58,11 @@
                            Foreground="#E0E0E0" 
                            HorizontalAlignment="Center" />
             </StackPanel>
+            <TextBlock Text="Немає зв'язку!"
+                       IsVisible="{Binding IsStale}"
+                       FontSize="16" Foreground="Tomato"
+                       HorizontalAlignment="Center" VerticalAlignment="Top"
+                       Margin="0,6,0,0" />
         </Grid>
     </Viewbox>
 </UserControl>

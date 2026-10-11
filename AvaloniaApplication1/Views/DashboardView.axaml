@@ -41,6 +41,9 @@
                             <Setter Property="BorderBrush" Value="Orange" />
                             <Setter Property="BorderThickness" Value="1" />
                         </Style>
+                        <Style Selector="widgetsViews|GaugeWidgetView.stale, widgetsViews|ChartWidgetView.stale">
+                            <Setter Property="Opacity" Value="0.45" />
+                        </Style>
                     </ItemsControl.Styles>
 
                     <ItemsControl.DataTemplates>

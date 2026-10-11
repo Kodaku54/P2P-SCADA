@@ -104,6 +104,13 @@ public partial class MainWindowViewModel : ViewModelBase
 
         _simulator?.Start();
         NetworkStatusService.Default.Start(TimeSpan.FromSeconds(5), simulate: _config.UseSimulator);
+        // ТИМЧАСОВО: перевірка показу IsStale
+        /*_ = Task.Run(async () =>
+        {
+            await Task.Delay(10_000);
+            _simulator?.Stop();
+            TagStore.Default.MarkStale("");   // пустий префікс = усі теги
+        });*/
     }
     [RelayCommand]
     private void DetachDashboard(DashboardViewModel dashboardToDetach)
