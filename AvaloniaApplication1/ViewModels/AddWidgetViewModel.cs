@@ -29,6 +29,17 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
 {
     private readonly double _x;
     private readonly double _y;
+    private readonly WidgetConfig? _existing;
+
+    public bool IsEditing => _existing != null;
+    public string WindowTitle => IsEditing ? "Налаштування віджета" : "Новий віджет";
+    public string ActionText => IsEditing ? "Зберегти" : "Створити";
+    public string SensorInfo => _existing == null ? "" : $"{_existing.DeviceId} / {_existing.Sensor}";
+
+    [ObservableProperty] private decimal? _widgetWidth = 300;
+    [ObservableProperty] private decimal? _widgetHeight = 200;
+    [ObservableProperty] private decimal? _widgetX = 0;
+    [ObservableProperty] private decimal? _widgetY = 0;
 
     public IReadOnlyList<DeviceOption> Devices { get; }
     public bool HasNoDevices => Devices.Count == 0;
@@ -102,6 +113,46 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
         Devices = BuildDeviceOptions(config);
         SelectedDevice = Devices.Count > 0 ? Devices[0] : null;
     }
+    public AddWidgetViewModel(AppConfig config, WidgetConfig existing)
+    {
+        _existing = existing;
+        Devices = Array.Empty<DeviceOption>();
+
+        SelectedType = existing.Type.Equals("chart", StringComparison.OrdinalIgnoreCase) ? "Chart" : "Gauge";
+        Title = existing.Title;
+        Unit = existing.Unit;
+        Min = (decimal)(existing.Min ?? 0);
+        Max = (decimal)(existing.Max ?? 100);
+        MaxPoints = existing.MaxPoints ?? 50;
+        WidgetWidth = (decimal)existing.Width;
+        WidgetHeight = (decimal)existing.Height;
+        WidgetX = (decimal)existing.X;
+        WidgetY = (decimal)existing.Y;
+    }
+    // Переносить поля віджета з діалогу в конфіг; false, якщо є помилка валідації
+    private bool ApplyWidgetSettings(WidgetConfig widget)
+    {
+        if (IsGauge)
+        {
+            var min = (double)(Min ?? 0);
+            var max = (double)(Max ?? 100);
+            if (max <= min)
+            {
+                ErrorMessage = "Максимум має бути більшим за мінімум.";
+                return false;
+            }
+            widget.Min = min;
+            widget.Max = max;
+        }
+        else
+        {
+            widget.MaxPoints = Math.Max(2, (int)(MaxPoints ?? 50));
+        }
+
+        widget.Title = string.IsNullOrWhiteSpace(Title) ? widget.Sensor : Title.Trim();
+        widget.Unit = Unit.Trim();
+        return true;
+    }
 
     private static List<DeviceOption> BuildDeviceOptions(AppConfig config)
     {
@@ -155,6 +206,7 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
 
     private bool CanCreate()
     {
+        if (IsEditing) return true;
         if (SelectedDevice == null) return false;
         return IsNewSensor ? !string.IsNullOrWhiteSpace(NewTag) : SelectedSensor != null;
     }
@@ -163,6 +215,22 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
     private void Create()
     {
         ErrorMessage = null;
+        ErrorMessage = null;
+
+        if (_existing != null)
+        {
+            if (!ApplyWidgetSettings(_existing)) return;
+
+            _existing.X = Math.Max(0, (double)(WidgetX ?? 0));
+            _existing.Y = Math.Max(0, (double)(WidgetY ?? 0));
+            _existing.Width = Math.Max(80, (double)(WidgetWidth ?? 300));
+            _existing.Height = Math.Max(80, (double)(WidgetHeight ?? 200));
+
+            Result = new AddWidgetResult(_existing, null, null);
+            CloseRequested?.Invoke();
+            return;
+        }
+
         var option = SelectedDevice!;
 
         // --- датчик ---
@@ -213,27 +281,11 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
             Type = SelectedType,
             DeviceId = option.Id,
             Sensor = sensorTag,
-            Title = string.IsNullOrWhiteSpace(Title) ? sensorTag : Title.Trim(),
-            Unit = Unit.Trim(),
             X = Math.Max(0, Math.Round(_x)),
             Y = Math.Max(0, Math.Round(_y))
         };
 
-        if (IsGauge)
-        {
-            widget.Min = (double)(Min ?? 0);
-            widget.Max = (double)(Max ?? 100);
-
-            if (widget.Max <= widget.Min)
-            {
-                ErrorMessage = "Максимум має бути більшим за мінімум.";
-                return;
-            }
-        }
-        else
-        {
-            widget.MaxPoints = Math.Max(2, (int)(MaxPoints ?? 50));
-        }
+        if (!ApplyWidgetSettings(widget)) return;
 
         Result = new AddWidgetResult(widget, newDevice, newSensor);
         CloseRequested?.Invoke();

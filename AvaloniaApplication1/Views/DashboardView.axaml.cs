@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -54,6 +55,8 @@ public partial class DashboardView : UserControl
         if (point.Properties.IsRightButtonPressed)
         {
             _menuPoint = point.Position;
+            var target = FindWidgetContainer(e.Source)?.DataContext as WidgetViewModelBase;
+            WidgetsHost.ContextMenu = BuildContextMenu(target); // меню відкриється при відпусканні кнопки
             return;
         }
 
@@ -71,6 +74,53 @@ public partial class DashboardView : UserControl
 
         e.Pointer.Capture(WidgetsHost);
         e.Handled = true; // графік/датчик не повинні реагувати на цей клік
+    }
+    // Різне меню для віджета і для порожнього місця
+    private ContextMenu BuildContextMenu(WidgetViewModelBase? widget)
+    {
+        if (DataContext is not DashboardViewModel vm) return new ContextMenu();
+
+        var owner = TopLevel.GetTopLevel(this) as Window;
+        var (x, y) = (_menuPoint.X, _menuPoint.Y);
+        var items = new List<Control>();
+
+        if (widget != null)
+        {
+            var settings = new MenuItem { Header = "Налаштування…" };
+            settings.Click += async (_, _) =>
+            {
+                if (owner != null) await vm.EditWidgetAsync(widget, owner);
+            };
+
+            var delete = new MenuItem { Header = "Видалити" };
+            delete.Click += async (_, _) => await vm.DeleteWidgetAsync(widget);
+
+            items.Add(settings);
+            items.Add(delete);
+        }
+        else
+        {
+            var add = new MenuItem { Header = "Додати віджет…" };
+            add.Click += async (_, _) =>
+            {
+                if (owner != null) await vm.AddWidgetAsync(x, y, owner);
+            };
+
+            items.Add(add);
+        }
+
+        items.Add(new Separator());
+
+        var edit = new MenuItem
+        {
+            Header = "Режим редагування",
+            ToggleType = MenuItemToggleType.CheckBox,
+            IsChecked = vm.IsEditMode
+        };
+        edit.Click += (_, _) => vm.IsEditMode = !vm.IsEditMode;
+        items.Add(edit);
+
+        return new ContextMenu { ItemsSource = items };
     }
     private void OnHostPointerMoved(object? sender, PointerEventArgs e)
     {
@@ -125,16 +175,7 @@ public partial class DashboardView : UserControl
             ? StandardCursorType.BottomRightCorner
             : StandardCursorType.SizeAll);
     }
-
-    private async void AddWidget_Click(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is not DashboardViewModel vm) return;
-
-        // Вікно, в якому лежить цей дашборд (головне або відкріплене)
-        if (TopLevel.GetTopLevel(this) is not Window owner) return;
-
-        await vm.AddWidgetAsync(_menuPoint.X, _menuPoint.Y, owner);
-    }
+    
     private void OnWheel(object? sender, PointerWheelEventArgs e)
     {
         if (!e.KeyModifiers.HasFlag(KeyModifiers.Control)) return;

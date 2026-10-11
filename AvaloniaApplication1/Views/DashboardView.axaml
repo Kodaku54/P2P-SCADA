@@ -20,16 +20,6 @@
                               Classes.editing="{Binding IsEditMode}"
                               ItemsSource="{Binding Widgets}">
 
-                    <ItemsControl.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Header="Додати віджет…" Click="AddWidget_Click" />
-                            <Separator />
-                            <MenuItem Header="Режим редагування"
-                                      ToggleType="CheckBox"
-                                      IsChecked="{Binding IsEditMode, Mode=TwoWay}" />
-                        </ContextMenu>
-                    </ItemsControl.ContextMenu>
-
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <Canvas Width="{Binding BackgroundImage.Size.Width, FallbackValue=1920}"

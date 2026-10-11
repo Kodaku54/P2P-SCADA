@@ -11,6 +11,8 @@ using AvaloniaApplication1.Services;
 using AvaloniaApplication1.ViewModels.Widgets;
 using AvaloniaApplication1.Views;
 using CommunityToolkit.Mvvm.ComponentModel;
+using MsBox.Avalonia;
+using MsBox.Avalonia.Enums;
 
 namespace AvaloniaApplication1.ViewModels;
 
@@ -77,6 +79,50 @@ public partial class DashboardViewModel : ViewModelBase
         // 3. У режимі симуляції новий тег одразу отримує дані
         if (_simulator != null)
             DashboardFactory.AddSimulatedSignal(_simulator, result.Widget);
+    }
+    public async Task EditWidgetAsync(WidgetViewModelBase widget, Window owner)
+    {
+        if (widget.Config == null) return;
+
+        var dialogVm = new AddWidgetViewModel(_appConfig, widget.Config);
+        var dialog = new AddWidgetWindow { DataContext = dialogVm };
+        dialogVm.CloseRequested += () => dialog.Close();
+
+        await dialog.ShowDialog(owner);
+
+        if (dialogVm.Result == null) return; // скасовано
+
+        // Діалог уже змінив WidgetConfig на місці
+        ConfigManager.Save(_appConfig);
+
+        // Найпростіше застосувати зміни: створити віджет заново на тому ж місці списку
+        var fresh = DashboardFactory.CreateWidget(_appConfig, widget.Config);
+        if (fresh == null) return;
+
+        var index = Widgets.IndexOf(widget);
+        widget.Dispose();
+        Widgets[index] = fresh;
+    }
+
+    public async Task DeleteWidgetAsync(WidgetViewModelBase widget)
+    {
+        var name = widget.Config?.Title ?? "віджет";
+
+        var box = MessageBoxManager.GetMessageBoxStandard(
+            "Видалення віджета",
+            $"Видалити віджет \"{name}\"?",
+            ButtonEnum.YesNo,
+            MsBox.Avalonia.Enums.Icon.Warning);
+
+        if (await box.ShowAsync() != ButtonResult.Yes) return;
+
+        if (widget.Config != null)
+            Config.Widgets.Remove(widget.Config);
+
+        ConfigManager.Save(_appConfig);
+
+        Widgets.Remove(widget);
+        widget.Dispose();
     }
 
     private static Bitmap? LoadBitmap(string? path)
