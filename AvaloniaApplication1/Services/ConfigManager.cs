@@ -38,6 +38,25 @@ public static class ConfigManager
         File.Copy(sourcePath, target);
         return name;
     }
+    public static void DeleteBackgroundIfUnused(AppConfig config, string? name)
+    {
+        // Чіпаємо лише файли, якими керує застосунок: просте ім'я без шляху
+        if (string.IsNullOrWhiteSpace(name) || Path.GetFileName(name) != name) return;
+
+        // Якщо інший дашборд використовує цей самий файл, лишаємо його
+        if (config.Dashboards.Any(d => d.BackgroundImage == name)) return;
+
+        try
+        {
+            var path = Path.Combine(BackgroundsDirectory, name);
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Config] Не вдалося видалити фон '{name}': {ex.Message}");
+        }
+    }
     
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -91,25 +110,7 @@ public static class ConfigManager
         File.Move(tmp, ConfigPath, overwrite: true);
     }
     
-    public static void DeleteBackgroundIfUnused(AppConfig config, string? name)
-    {
-        // Чіпаємо лише файли, якими керує застосунок: просте ім'я без шляху
-        if (string.IsNullOrWhiteSpace(name) || Path.GetFileName(name) != name) return;
-
-        // Якщо інший дашборд використовує цей самий файл, лишаємо його
-        if (config.Dashboards.Any(d => d.BackgroundImage == name)) return;
-
-        try
-        {
-            var path = Path.Combine(BackgroundsDirectory, name);
-            if (File.Exists(path))
-                File.Delete(path);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[Config] Не вдалося видалити фон '{name}': {ex.Message}");
-        }
-    }
+    
 
     // Шаблон для першого запуску
     private static AppConfig CreateDefault() => new()

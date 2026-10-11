@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -19,6 +20,8 @@ public partial class MainWindowViewModel : ViewModelBase
     public ObservableCollection<DashboardViewModel> Dashboards { get; }
     private readonly AppConfig _config;
     private readonly DataSimulator? _simulator;
+    private readonly List<DashboardViewModel> _allDashboards;
+    private DevicesViewModel? _devices;
 
     [RelayCommand]
     private void Login()
@@ -35,6 +38,13 @@ public partial class MainWindowViewModel : ViewModelBase
     private void GoToPage1()
     {
         CurrentPage = _page1 ??= new Page1ViewModel();
+    }
+    [RelayCommand]
+    private void GoToDevices()
+    {
+        _devices ??= new DevicesViewModel(_config, () => _allDashboards);
+        _devices.Refresh(); // пристрої могли з'явитися після додавання віджета
+        CurrentPage = _devices;
     }
     
     [RelayCommand]
@@ -64,6 +74,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _config.Dashboards.Add(dashboardConfig);
         ConfigManager.Save(_config);
 
+        Track(dashboard);
         Dashboards.Add(dashboard);
         CurrentPage = dashboard;
     }
@@ -88,12 +99,18 @@ public partial class MainWindowViewModel : ViewModelBase
 
         // 2. Прибираємо з інтерфейсу; якщо він був відкритий, перемикаємось на інший
         var wasCurrent = CurrentPage == dashboard;
+        _allDashboards.Remove(dashboard);
         Dashboards.Remove(dashboard);
         if (wasCurrent)
             CurrentPage = Dashboards.FirstOrDefault();
 
         // 3. Відписуємо віджети від TagStore
         dashboard.Dispose();
+    }
+    private void Track(DashboardViewModel dashboard)
+    {
+        _allDashboards.Add(dashboard);
+        dashboard.DevicesChanged += () => _devices?.Refresh();
     }
 
     public MainWindowViewModel()
@@ -102,15 +119,12 @@ public partial class MainWindowViewModel : ViewModelBase
         _simulator = DashboardFactory.CreateSimulator(_config);
         Dashboards = new ObservableCollection<DashboardViewModel>(DashboardFactory.Create(_config, _simulator));
 
+        _allDashboards = new List<DashboardViewModel>();
+        foreach (var dashboard in Dashboards)
+            Track(dashboard);
+
         _simulator?.Start();
         NetworkStatusService.Default.Start(TimeSpan.FromSeconds(5), simulate: _config.UseSimulator);
-        // ТИМЧАСОВО: перевірка показу IsStale
-        /*_ = Task.Run(async () =>
-        {
-            await Task.Delay(10_000);
-            _simulator?.Stop();
-            TagStore.Default.MarkStale("");   // пустий префікс = усі теги
-        });*/
     }
     [RelayCommand]
     private void DetachDashboard(DashboardViewModel dashboardToDetach)

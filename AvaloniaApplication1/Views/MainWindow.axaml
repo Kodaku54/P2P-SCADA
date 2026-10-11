@@ -23,6 +23,7 @@
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <Button Content="Вікно логіну" Command="{Binding LoginCommand}"/>
                     <Button Content="Сторінка 1" Command="{Binding GoToPage1Command}"/>
+                    <Button Content="Пристрої" Command="{Binding GoToDevicesCommand}"/>
                 </StackPanel>
 
                 <Separator Background="#3E3E42" Margin="0,5"/>

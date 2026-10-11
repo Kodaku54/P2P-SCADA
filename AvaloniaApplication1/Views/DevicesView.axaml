@@ -1,0 +1,55 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AvaloniaApplication1.ViewModels"
+             x:Class="AvaloniaApplication1.Views.DevicesView"
+             x:DataType="vm:DevicesViewModel"
+             x:Name="Root">
+
+    <ScrollViewer>
+        <StackPanel Margin="15" Spacing="12">
+
+            <TextBlock Text="Пристрої та датчики" FontSize="20" FontWeight="SemiBold" />
+
+            <TextBlock IsVisible="{Binding IsEmpty}" Opacity="0.7" TextWrapping="Wrap"
+                       Text="Пристроїв ще немає. Вони з'являться, коли ви додасте перший віджет." />
+
+            <ItemsControl ItemsSource="{Binding Devices}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:DeviceRow">
+                        <Border Background="#2B2D30" CornerRadius="6" Padding="12" Margin="0,0,0,10">
+                            <StackPanel Spacing="6">
+
+                                <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding Subtitle}" FontSize="12" Opacity="0.6" />
+
+                                <TextBlock IsVisible="{Binding HasNoSensors}" Opacity="0.6"
+                                           Text="Датчиків немає" />
+
+                                <ItemsControl ItemsSource="{Binding Sensors}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:SensorRow">
+                                            <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                                                <TextBlock Grid.Column="0" Text="{Binding Text}"
+                                                           FontFamily="Monospace" VerticalAlignment="Center" />
+                                                <Button Grid.Column="1" Content="✕"
+                                                        ToolTip.Tip="Видалити датчик"
+                                                        Command="{Binding #Root.((vm:DevicesViewModel)DataContext).DeleteSensorCommand}"
+                                                        CommandParameter="{Binding}"
+                                                        Padding="6,2"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        Foreground="IndianRed" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

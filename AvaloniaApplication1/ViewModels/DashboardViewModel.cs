@@ -25,6 +25,7 @@ public partial class DashboardViewModel : ViewModelBase
     public ObservableCollection<WidgetViewModelBase> Widgets { get; }
     public string DashboardTitle => Config.Title;
     public Bitmap? BackgroundImage { get; set; }
+    public event Action? DevicesChanged;
 
     // Для підказки на порожньому дашборді
     public bool IsEmpty => Widgets.Count == 0;
@@ -70,6 +71,11 @@ public partial class DashboardViewModel : ViewModelBase
         // 2. Віджет у конфіг і на екран
         Config.Widgets.Add(result.Widget);
         ConfigManager.Save(_appConfig);
+        Config.Widgets.Add(result.Widget);
+        ConfigManager.Save(_appConfig);
+
+        if (result.NewDevice != null || result.NewSensor != null)
+            DevicesChanged?.Invoke();
 
         var widget = DashboardFactory.CreateWidget(_appConfig, result.Widget);
         if (widget == null) return;
@@ -123,6 +129,21 @@ public partial class DashboardViewModel : ViewModelBase
 
         Widgets.Remove(widget);
         widget.Dispose();
+    }
+    public void RemoveWidgetsOf(string deviceId, string sensor)
+    {
+        var live = Widgets
+            .Where(w => w.Config?.DeviceId == deviceId && w.Config.Sensor == sensor)
+            .ToList();
+
+        foreach (var widget in live)
+        {
+            Widgets.Remove(widget);
+            widget.Dispose();
+        }
+
+        // Також конфіги без живого віджета (наприклад, якщо віджет не вдалось створити)
+        Config.Widgets.RemoveAll(w => w.DeviceId == deviceId && w.Sensor == sensor);
     }
 
     private static Bitmap? LoadBitmap(string? path)
