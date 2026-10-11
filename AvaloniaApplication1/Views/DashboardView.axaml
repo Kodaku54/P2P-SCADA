@@ -47,7 +47,7 @@
                             <Setter Property="Canvas.Left" Value="{Binding X}" />
                             <Setter Property="Canvas.Top" Value="{Binding Y}" />
                         </Style>
-                        <Style Selector="ItemsControl.editing ContentPresenter">
+                        <Style Selector="ItemsControl.editing > ContentPresenter">
                             <Setter Property="BorderBrush" Value="Orange" />
                             <Setter Property="BorderThickness" Value="1" />
                         </Style>
