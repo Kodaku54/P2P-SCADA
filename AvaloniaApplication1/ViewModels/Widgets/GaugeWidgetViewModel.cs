@@ -1,6 +1,5 @@
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Messaging;
 using System;
 
 namespace AvaloniaApplication1.ViewModels.Widgets;
@@ -42,16 +41,8 @@ public partial class GaugeWidgetViewModel : WidgetViewModelBase
         
         Value = min; // Старт з мінімуму
 
-        // Підписуємось на розсилку даних від сервісів
-        WeakReferenceMessenger.Default.Register<Messages.SensorDataMessage>(this, (recipient, message) =>
-        {
-            // Відфільтровуємо чужі дані: якщо тег не мій, просто ігноруємо
-            if (message.TagId == DataSourceTag)
-            {
-                // Оновлюємо значення. Avalonia автоматично викличе OnValueChanged
-                Value = message.Value;
-            }
-        });
+        // Підписуємось на значення свого тега. Avalonia автоматично викличе OnValueChanged
+        BindTag(DataSourceTag, tagValue => Value = tagValue.Value);
     }
 
     // Цей метод автоматично викликається Toolkit-ом, коли змінюється _value

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using AvaloniaApplication1.Services;
 using CliWrap;
@@ -10,6 +11,26 @@ namespace AvaloniaApplication1.ViewModels;
 
 public partial class Page1ViewModel : ViewModelBase
 {
+    public ObservableCollection<string> NodeLines { get; } = new();
+
+    [ObservableProperty]
+    private string _networkState = "";
+
+    public Page1ViewModel()
+    {
+        NetworkStatusService.Default.Changed += RefreshNodes;
+        RefreshNodes();
+    }
+
+    private void RefreshNodes()
+    {
+        var net = NetworkStatusService.Default;
+        NetworkState = $"Tailscale: {net.BackendState}{(net.IsSimulated ? " (симуляція)" : "")}";
+
+        NodeLines.Clear();
+        foreach (var n in net.Nodes)
+            NodeLines.Add($"{(n.Online ? "●" : "○")} {n.HostName}  {n.Ip}  {n.Os}  [{n.Id}]");
+    }
     private readonly TailscaleService _tailscale = new TailscaleService();
     [ObservableProperty]
     private string _tailscaleOutput = "Натисніть кнопку, щоб отримати статус...";

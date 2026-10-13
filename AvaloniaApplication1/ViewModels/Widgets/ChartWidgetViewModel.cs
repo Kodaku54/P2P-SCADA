@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Messaging;
 using LiveChartsCore;
 using LiveChartsCore.Defaults;
 using LiveChartsCore.SkiaSharpView;
@@ -59,18 +58,15 @@ public partial class ChartWidgetViewModel : WidgetViewModelBase
         XAxes = new Axis[] { new Axis { IsVisible = false } }; // Ховаємо нижню вісь
 
         // Підписуємось на розсилку даних
-        WeakReferenceMessenger.Default.Register<Messages.SensorDataMessage>(this, (recipient, message) =>
+        BindTag(DataSourceTag, tagValue =>
         {
-            if (message.TagId == DataSourceTag)
-            {
-                // Додаємо нове значення
-                _values.Add(new ObservableValue(message.Value));
+            // Додаємо нове значення
+            _values.Add(new ObservableValue(tagValue.Value));
 
-                // Видаляємо найстаріше, щоб графік "рухався"
-                if (_values.Count > _maxPoints)
-                {
-                    _values.RemoveAt(0);
-                }
+            // Видаляємо найстаріше, щоб графік "рухався"
+            if (_values.Count > _maxPoints)
+            {
+                _values.RemoveAt(0);
             }
         });
     }

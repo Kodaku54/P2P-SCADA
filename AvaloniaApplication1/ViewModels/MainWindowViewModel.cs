@@ -1,14 +1,27 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AvaloniaApplication1.Views;
-using System.Linq;
+using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using AvaloniaApplication1.Models;
+using AvaloniaApplication1.Services;
+using MsBox.Avalonia;
+using MsBox.Avalonia.Enums;
 
 namespace AvaloniaApplication1.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
     public ObservableCollection<DashboardViewModel> Dashboards { get; }
+    private readonly AppConfig _config;
+    private readonly DataSimulator? _simulator;
+    private readonly List<DashboardViewModel> _allDashboards;
+    private DevicesViewModel? _devices;
 
     [RelayCommand]
     private void Login()
@@ -18,10 +31,20 @@ public partial class MainWindowViewModel : ViewModelBase
     }    
     [ObservableProperty]
     private ViewModelBase _currentPage;
+    
+    private Page1ViewModel? _page1;
+
     [RelayCommand]
     private void GoToPage1()
     {
-        CurrentPage = new Page1ViewModel();
+        CurrentPage = _page1 ??= new Page1ViewModel();
+    }
+    [RelayCommand]
+    private void GoToDevices()
+    {
+        _devices ??= new DevicesViewModel(_config, () => _allDashboards);
+        _devices.Refresh(); // пристрої могли з'явитися після додавання віджета
+        CurrentPage = _devices;
     }
     
     [RelayCommand]
@@ -32,14 +55,76 @@ public partial class MainWindowViewModel : ViewModelBase
             CurrentPage = selectedDashboard;
         }
     }
+    [RelayCommand]
+    private async Task AddDashboardAsync()
+    {
+        var owner = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        if (owner == null) return;
+
+        var dialogVm = new AddDashboardViewModel();
+        var dialog = new AddDashboardWindow { DataContext = dialogVm };
+        dialogVm.CloseRequested += () => dialog.Close();
+
+        await dialog.ShowDialog(owner);
+
+        if (dialogVm.Result is not { } dashboardConfig) return; // скасовано
+
+        var dashboard = DashboardFactory.CreateDashboard(_config, dashboardConfig, _simulator);
+
+        _config.Dashboards.Add(dashboardConfig);
+        ConfigManager.Save(_config);
+
+        Track(dashboard);
+        Dashboards.Add(dashboard);
+        CurrentPage = dashboard;
+    }
+    
+    [RelayCommand]
+    private async Task DeleteDashboardAsync(DashboardViewModel? dashboard)
+    {
+        if (dashboard == null) return;
+
+        var box = MessageBoxManager.GetMessageBoxStandard(
+            "Видалення дашборду",
+            $"Видалити дашборд \"{dashboard.DashboardTitle}\"?\nЦю дію не можна скасувати.",
+            ButtonEnum.YesNo,
+            MsBox.Avalonia.Enums.Icon.Warning);
+
+        if (await box.ShowAsync() != ButtonResult.Yes) return;
+
+        // 1. Прибираємо з конфігу й зберігаємо
+        _config.Dashboards.Remove(dashboard.Config);
+        ConfigManager.Save(_config);
+        ConfigManager.DeleteBackgroundIfUnused(_config, dashboard.Config.BackgroundImage);
+
+        // 2. Прибираємо з інтерфейсу; якщо він був відкритий, перемикаємось на інший
+        var wasCurrent = CurrentPage == dashboard;
+        _allDashboards.Remove(dashboard);
+        Dashboards.Remove(dashboard);
+        if (wasCurrent)
+            CurrentPage = Dashboards.FirstOrDefault();
+
+        // 3. Відписуємо віджети від TagStore
+        dashboard.Dispose();
+    }
+    private void Track(DashboardViewModel dashboard)
+    {
+        _allDashboards.Add(dashboard);
+        dashboard.DevicesChanged += () => _devices?.Refresh();
+    }
 
     public MainWindowViewModel()
     {
-        Dashboards = new ObservableCollection<DashboardViewModel>();
-        Dashboards.Add(new DashboardViewModel("100.85.42.12", "Лабораторія RPi 1",
-            "avares://AvaloniaApplication1/Assets/scheme.jpeg"));
-        Dashboards.Add(new DashboardViewModel("100.85.42.13", "Лабораторія 2 RPi 3",
-            "avares://AvaloniaApplication1/Assets/scheme.jpeg"));
+        _config = ConfigManager.Load();
+        _simulator = DashboardFactory.CreateSimulator(_config);
+        Dashboards = new ObservableCollection<DashboardViewModel>(DashboardFactory.Create(_config, _simulator));
+
+        _allDashboards = new List<DashboardViewModel>();
+        foreach (var dashboard in Dashboards)
+            Track(dashboard);
+
+        _simulator?.Start();
+        NetworkStatusService.Default.Start(TimeSpan.FromSeconds(5), simulate: _config.UseSimulator);
     }
     [RelayCommand]
     private void DetachDashboard(DashboardViewModel dashboardToDetach)
