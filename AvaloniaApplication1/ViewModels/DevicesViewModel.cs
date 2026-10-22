@@ -103,7 +103,7 @@ public sealed partial class DevicesViewModel : ViewModelBase
         // 2. Сам датчик зникає з пристрою
         row.Device.Sensors.Remove(row.Sensor);
         ConfigManager.Save(_config);
-
+        DeviceManager.Default.Sync();   // Pi має дізнатися, що датчика більше немає
         Refresh();
     }
 }

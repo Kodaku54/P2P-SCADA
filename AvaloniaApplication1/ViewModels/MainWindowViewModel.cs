@@ -110,7 +110,11 @@ public partial class MainWindowViewModel : ViewModelBase
     private void Track(DashboardViewModel dashboard)
     {
         _allDashboards.Add(dashboard);
-        dashboard.DevicesChanged += () => _devices?.Refresh();
+        dashboard.DevicesChanged += () =>
+        {
+            _devices?.Refresh();
+            DeviceManager.Default.Sync();
+        };
     }
 
     public MainWindowViewModel()
@@ -123,7 +127,10 @@ public partial class MainWindowViewModel : ViewModelBase
         foreach (var dashboard in Dashboards)
             Track(dashboard);
 
-        _simulator?.Start();
+        // Справжні пристрої замість симулятора
+        if (!_config.UseSimulator)
+            DeviceManager.Default.Start(_config);
+
         NetworkStatusService.Default.Start(TimeSpan.FromSeconds(5), simulate: _config.UseSimulator);
     }
     [RelayCommand]

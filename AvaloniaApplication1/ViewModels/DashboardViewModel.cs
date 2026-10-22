@@ -76,8 +76,6 @@ public partial class DashboardViewModel : ViewModelBase
         // 2. Віджет у конфіг і на екран
         Config.Widgets.Add(result.Widget);
         ConfigManager.Save(_appConfig);
-        Config.Widgets.Add(result.Widget);
-        ConfigManager.Save(_appConfig);
 
         if (result.NewDevice != null || result.NewSensor != null)
             DevicesChanged?.Invoke();
