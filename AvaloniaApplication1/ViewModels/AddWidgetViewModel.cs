@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using AvaloniaApplication1.Models;
 using AvaloniaApplication1.Services;
+using AvaloniaApplication1.ViewModels.Widgets;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -44,7 +45,7 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
     public IReadOnlyList<DeviceOption> Devices { get; }
     public bool HasNoDevices => Devices.Count == 0;
 
-    public string[] WidgetTypes { get; } = { "Gauge", "Chart" };
+    public string[] WidgetTypes { get; } = { "Gauge", "Chart", "Indicator", "Note" };
     public string[] Areas { get; } = { "holding", "input", "coil", "discrete" };
     public string[] DataTypes { get; } = { "Short", "Float", "Bool" };
 
@@ -88,10 +89,26 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsGauge))]
     [NotifyPropertyChangedFor(nameof(IsChart))]
+    [NotifyPropertyChangedFor(nameof(IsIndicator))]
+    [NotifyPropertyChangedFor(nameof(IsNote))]
+    [NotifyPropertyChangedFor(nameof(HasUnit))]
+    [NotifyPropertyChangedFor(nameof(ShowSensorPicker))]
+    [NotifyPropertyChangedFor(nameof(ShowSensorInfo))]
     private string _selectedType = "Gauge";
 
     public bool IsGauge => SelectedType == "Gauge";
     public bool IsChart => SelectedType == "Chart";
+    public bool IsIndicator => SelectedType == "Indicator";
+    public bool IsNote => SelectedType == "Note";
+    public bool HasUnit => IsGauge || IsChart;               // одиниці мають сенс лише для числових віджетів
+    public bool ShowSensorPicker => !IsEditing && !IsNote;   // нотатка не прив'язана до датчика
+    public bool ShowSensorInfo => IsEditing && !IsNote;
+    
+    [ObservableProperty] private string _onText = IndicatorWidgetViewModel.DefaultOnText;
+    [ObservableProperty] private string _offText = IndicatorWidgetViewModel.DefaultOffText;
+    [ObservableProperty] private string _noteText = "";
+    [ObservableProperty] private decimal? _fontSize = 16;
+
 
     [ObservableProperty] private string _title = "";
     [ObservableProperty] private string _unit = "";
@@ -118,7 +135,11 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
         _existing = existing;
         Devices = Array.Empty<DeviceOption>();
 
-        SelectedType = existing.Type.Equals("chart", StringComparison.OrdinalIgnoreCase) ? "Chart" : "Gauge";
+        SelectedType = WidgetTypes.FirstOrDefault(t => t.Equals(existing.Type, StringComparison.OrdinalIgnoreCase)) ?? "Gauge";
+        OnText = existing.OnText ?? IndicatorWidgetViewModel.DefaultOnText;
+        OffText = existing.OffText ?? IndicatorWidgetViewModel.DefaultOffText;
+        NoteText = existing.Text ?? "";
+        FontSize = (decimal)(existing.FontSize ?? 16);
         Title = existing.Title;
         Unit = existing.Unit;
         Min = (decimal)(existing.Min ?? 0);
@@ -132,25 +153,44 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
     // Переносить поля віджета з діалогу в конфіг; false, якщо є помилка валідації
     private bool ApplyWidgetSettings(WidgetConfig widget)
     {
-        if (IsGauge)
+        switch (SelectedType)
         {
-            var min = (double)(Min ?? 0);
-            var max = (double)(Max ?? 100);
-            if (max <= min)
-            {
-                ErrorMessage = "Максимум має бути більшим за мінімум.";
-                return false;
-            }
-            widget.Min = min;
-            widget.Max = max;
-        }
-        else
-        {
-            widget.MaxPoints = Math.Max(2, (int)(MaxPoints ?? 50));
+            case "Gauge":
+                var min = (double)(Min ?? 0);
+                var max = (double)(Max ?? 100);
+                if (max <= min)
+                {
+                    ErrorMessage = "Максимум має бути більшим за мінімум.";
+                    return false;
+                }
+                widget.Min = min;
+                widget.Max = max;
+                break;
+
+            case "Chart":
+                widget.MaxPoints = Math.Max(2, (int)(MaxPoints ?? 50));
+                break;
+
+            case "Indicator":
+                widget.OnText = string.IsNullOrWhiteSpace(OnText) ? IndicatorWidgetViewModel.DefaultOnText : OnText.Trim();
+                widget.OffText = string.IsNullOrWhiteSpace(OffText) ? IndicatorWidgetViewModel.DefaultOffText : OffText.Trim();
+                break;
+
+            case "Note":
+                if (string.IsNullOrWhiteSpace(NoteText))
+                {
+                    ErrorMessage = "Введіть текст нотатки.";
+                    return false;
+                }
+                widget.Text = NoteText.Trim();
+                widget.FontSize = Math.Clamp((double)(FontSize ?? 16), 8, 200);
+                widget.Title = "Нотатка";   // використовується в запиті на видалення
+                widget.Unit = "";
+                return true;
         }
 
         widget.Title = string.IsNullOrWhiteSpace(Title) ? widget.Sensor : Title.Trim();
-        widget.Unit = Unit.Trim();
+        widget.Unit = (Unit ?? "").Trim();
         return true;
     }
 
@@ -207,14 +247,21 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
     private bool CanCreate()
     {
         if (IsEditing) return true;
+        if (IsNote) return true;
         if (SelectedDevice == null) return false;
         return IsNewSensor ? !string.IsNullOrWhiteSpace(NewTag) : SelectedSensor != null;
     }
+    // Розмір нового віджета за замовчуванням
+    private static (double Width, double Height) DefaultSize(string type) => type switch
+    {
+        "Indicator" => (200.0, 120.0),
+        "Note" => (300.0, 60.0),
+        _ => (300.0, 200.0)
+    };
 
     [RelayCommand(CanExecute = nameof(CanCreate))]
     private void Create()
     {
-        ErrorMessage = null;
         ErrorMessage = null;
 
         if (_existing != null)
@@ -223,10 +270,28 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
 
             _existing.X = Math.Max(0, (double)(WidgetX ?? 0));
             _existing.Y = Math.Max(0, (double)(WidgetY ?? 0));
-            _existing.Width = Math.Max(80, (double)(WidgetWidth ?? 300));
-            _existing.Height = Math.Max(80, (double)(WidgetHeight ?? 200));
+            _existing.Width = DefaultSize(SelectedType).Width;
+            _existing.Height = DefaultSize(SelectedType).Height;
 
             Result = new AddWidgetResult(_existing, null, null);
+            CloseRequested?.Invoke();
+            return;
+        }
+        if (IsNote)
+        {
+            var size = DefaultSize("Note");
+            var note = new WidgetConfig
+            {
+                Type = "Note",
+                X = Math.Max(0, Math.Round(_x)),
+                Y = Math.Max(0, Math.Round(_y)),
+                Width = size.Width,
+                Height = size.Height
+            };
+
+            if (!ApplyWidgetSettings(note)) return;
+
+            Result = new AddWidgetResult(note, null, null);
             CloseRequested?.Invoke();
             return;
         }

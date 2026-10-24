@@ -23,7 +23,7 @@ public class DashboardConfig
 
 public class WidgetConfig
 {
-    public string Type { get; set; } = "Gauge";            // "Gauge" або "Chart"
+    public string Type { get; set; } = "Gauge";            // "Gauge" | "Chart" | "Indicator" | "Note"
     public string DeviceId { get; set; } = string.Empty;   // DeviceConfig.Id
     public string Sensor { get; set; } = string.Empty;     // SensorConfig.Tag
     public string Title { get; set; } = string.Empty;
@@ -40,4 +40,9 @@ public class WidgetConfig
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public double? LowWarning { get; set; }   // Gauge
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public double? HighCritical { get; set; } // Gauge
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public int? MaxPoints { get; set; }       // Chart
+    
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? OnText { get; set; }    // Indicator
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? OffText { get; set; }   // Indicator
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? Text { get; set; }       // Note
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public double? FontSize { get; set; }   // Note
 }

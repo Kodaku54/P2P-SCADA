@@ -1,0 +1,13 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:widgets="clr-namespace:AvaloniaApplication1.ViewModels.Widgets"
+             x:Class="AvaloniaApplication1.Views.Widgets.NoteWidgetView"
+             x:DataType="widgets:NoteWidgetViewModel">
+    <Border Width="{Binding Width}" Height="{Binding Height}"
+            Background="#2B2A4A" Padding="6" ClipToBounds="True">
+        <TextBlock Text="{Binding Text}" FontSize="{Binding FontSize}"
+                   Foreground="#E0E0E0" TextWrapping="Wrap" 
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"/>
+    </Border>
+</UserControl>

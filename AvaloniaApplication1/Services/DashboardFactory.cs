@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -29,6 +30,13 @@ public static class DashboardFactory
 
     public static WidgetViewModelBase? CreateWidget(AppConfig config, WidgetConfig w)
     {
+        if (w.Type.Equals("note", StringComparison.OrdinalIgnoreCase))
+        {
+            return new NoteWidgetViewModel(w.Text ?? "", w.FontSize ?? 16)
+            {
+                Title = "Нотатка", X = w.X, Y = w.Y, Width = w.Width, Height = w.Height, Config = w
+            };
+        }
         // Кожен віджет сам вказує, з якого пристрою його датчик
         var device = config.Devices.FirstOrDefault(d => d.Id == w.DeviceId);
         if (device == null)
@@ -56,6 +64,11 @@ public static class DashboardFactory
 
             case "chart":
                 return new ChartWidgetViewModel(tagId, title, w.Unit, w.MaxPoints ?? 50)
+                {
+                    X = w.X, Y = w.Y, Width = w.Width, Height = w.Height, Config = w
+                };
+            case "indicator":
+                return new IndicatorWidgetViewModel(tagId, title, w.OnText, w.OffText)
                 {
                     X = w.X, Y = w.Y, Width = w.Width, Height = w.Height, Config = w
                 };
@@ -88,6 +101,7 @@ public static class DashboardFactory
         var hash = 0;
         foreach (var c in tagId) hash += c;
 
-        simulator.Add(tagId, w.Min ?? 0, w.Max ?? 100, periodSeconds: 15 + hash % 15);
+        var isIndicator = w.Type.Equals("Indicator", StringComparison.OrdinalIgnoreCase);
+        simulator.Add(tagId, w.Min ?? 0, isIndicator ? 1 : (w.Max ?? 100), periodSeconds: 15 + hash % 15);
     }
 }
