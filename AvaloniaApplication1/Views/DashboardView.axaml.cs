@@ -18,9 +18,9 @@ public partial class DashboardView : UserControl
 {
     private double _zoom = 1.0;
     private Point _menuPoint;
-    private const double Grid = 10;          // крок прив'язки до сітки; 1 = без прив'язки
+    private const double Grid = 5;          // крок прив'язки до сітки; 1 = без прив'язки
     private const double ResizeZone = 20;    // розмір «ручки» в правому нижньому куті
-    private const double MinWidgetSize = 80;
+    private const double MinWidgetSize = 50;
 
     private WidgetViewModelBase? _dragWidget;
     private bool _resizing;

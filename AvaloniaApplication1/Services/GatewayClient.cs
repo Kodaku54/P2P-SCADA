@@ -192,4 +192,37 @@ public sealed class GatewayClient : IDisposable
             Debug.WriteLine($"[Gateway] {_device.Id}: не вдалося відправити конфігурацію: {ex.Message}");
         }
     }
+    
+    /// <summary>Записує значення в датчик. null означає успіх, інакше текст помилки.</summary>
+    public async Task<string?> WriteAsync(string tag, double value)
+    {
+        var host = ResolveHost();
+        if (host == null) return "Невідома адреса пристрою.";
+        if (!_connected) return "Немає зв'язку з пристроєм.";
+
+        try
+        {
+            var body = JsonSerializer.Serialize(new { value });
+            using var content = new StringContent(body, Encoding.UTF8, "application/json");
+            using var response = await Http.PutAsync(
+                $"http://{host}:{GatewayPort}/sensors/{Uri.EscapeDataString(tag)}/value", content);
+
+            if (response.IsSuccessStatusCode) return null;
+
+            var text = await response.Content.ReadAsStringAsync();
+            try
+            {
+                using var doc = JsonDocument.Parse(text);
+                if (doc.RootElement.TryGetProperty("error", out var error))
+                    return error.GetString();
+            }
+            catch (JsonException) { }
+
+            return $"Помилка {(int)response.StatusCode}";
+        }
+        catch (Exception ex)
+        {
+            return ex.Message;
+        }
+    }
 }

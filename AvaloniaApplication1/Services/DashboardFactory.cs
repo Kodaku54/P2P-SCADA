@@ -72,6 +72,14 @@ public static class DashboardFactory
                 {
                     X = w.X, Y = w.Y, Width = w.Width, Height = w.Height, Config = w
                 };
+            case "input":
+            {
+                var inputSensor = device.Sensors.First(s => s.Tag == w.Sensor);   // існування вже перевірено вище
+                return new InputWidgetViewModel(device.Id, inputSensor, title, w, () => ConfigManager.Save(config))
+                {
+                    X = w.X, Y = w.Y, Width = w.Width, Height = w.Height, Config = w
+                };
+            }
             default:
                 Debug.WriteLine($"[Config] Невідомий тип віджета '{w.Type}', пропущено");
                 return null;

@@ -1,0 +1,49 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:widgets="clr-namespace:AvaloniaApplication1.ViewModels.Widgets"
+             x:Class="AvaloniaApplication1.Views.Widgets.InputWidgetView"
+             x:DataType="widgets:InputWidgetViewModel"
+             Classes.stale="{Binding IsStale}">
+    <Viewbox Width="{Binding Width}" Height="{Binding Height}" Stretch="Uniform">
+        <Panel>
+            <!-- Датчик Bool: кнопка, що записує фіксоване значення -->
+            <Border Width="200" Height="100" Background="#2B2A4A" CornerRadius="10" Padding="6"
+                    IsVisible="{Binding IsButton}">
+                <StackPanel Spacing="6" VerticalAlignment="Center">
+                    <Button Content="{Binding Title}" Command="{Binding ApplyCommand}"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                            FontSize="18" Height="48" />
+                    <TextBlock Text="{Binding StatusText}" Foreground="{Binding StatusBrush}"
+                               FontSize="12" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Border>
+
+            <!-- Числові датчики: поле вводу -->
+            <Border Width="260" Height="170" Background="#2B2A4A" CornerRadius="10" Padding="12"
+                    IsVisible="{Binding IsNumeric}">
+                <StackPanel Spacing="8">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding CurrentText}"
+                                   FontSize="14" Foreground="#9FA8DA" />
+                        <TextBlock Text="{Binding Title}" FontSize="14" Foreground="#E0E0E0" />
+                    </DockPanel>
+
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                        <TextBox Text="{Binding InputText}">
+                            <TextBox.KeyBindings>
+                                <KeyBinding Gesture="Enter" Command="{Binding ApplyCommand}" />
+                            </TextBox.KeyBindings>
+                        </TextBox>
+                        <Button Grid.Column="1" Content="Записати" Command="{Binding ApplyCommand}" />
+                    </Grid>
+
+                    <ComboBox ItemsSource="{Binding Recent}" SelectedItem="{Binding SelectedRecent}"
+                              IsVisible="{Binding HasRecent}" PlaceholderText="Останні значення"
+                              HorizontalAlignment="Stretch" />
+
+                    <TextBlock Text="{Binding StatusText}" Foreground="{Binding StatusBrush}" FontSize="12" />
+                </StackPanel>
+            </Border>
+        </Panel>
+    </Viewbox>
+</UserControl>

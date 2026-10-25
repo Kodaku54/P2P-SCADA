@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using AvaloniaApplication1.Models;
 using AvaloniaApplication1.Services;
@@ -45,7 +46,7 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
     public IReadOnlyList<DeviceOption> Devices { get; }
     public bool HasNoDevices => Devices.Count == 0;
 
-    public string[] WidgetTypes { get; } = { "Gauge", "Chart", "Indicator", "Note" };
+    public string[] WidgetTypes { get; } = { "Gauge", "Chart", "Indicator", "Note", "Input" };
     public string[] Areas { get; } = { "holding", "input", "coil", "discrete" };
     public string[] DataTypes { get; } = { "Short", "Float", "Bool" };
 
@@ -103,6 +104,16 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
     public bool HasUnit => IsGauge || IsChart;               // одиниці мають сенс лише для числових віджетів
     public bool ShowSensorPicker => !IsEditing && !IsNote;   // нотатка не прив'язана до датчика
     public bool ShowSensorInfo => IsEditing && !IsNote;
+    public bool IsInput => SelectedType == "Input";
+    public bool InputIsBool => CurrentDataType == "Bool";
+    public bool InputIsButton => IsInput && InputIsBool;
+    public bool InputIsNumeric => IsInput && !InputIsBool;
+    
+    // Тип обраного датчика (під час редагування береться з конфігу)
+    private string? CurrentDataType =>
+        IsEditing ? _editSensorType : IsNewSensor ? NewDataType : SelectedSensor?.DataType;
+
+    private readonly string? _editSensorType;
     
     [ObservableProperty] private string _onText = IndicatorWidgetViewModel.DefaultOnText;
     [ObservableProperty] private string _offText = IndicatorWidgetViewModel.DefaultOffText;
@@ -117,6 +128,10 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
     [ObservableProperty] private decimal? _maxPoints = 50;
 
     [ObservableProperty] private string? _errorMessage;
+    
+    [ObservableProperty] private decimal? _writeValue = 1;   // Bool: що записує кнопка
+    [ObservableProperty] private decimal? _inputMin;         // числа: межі введення (порожньо = без обмежень)
+    [ObservableProperty] private decimal? _inputMax;
 
     // Заповнюється після "Створити"; null, якщо діалог скасовано
     public AddWidgetResult? Result { get; private set; }
@@ -149,6 +164,12 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
         WidgetHeight = (decimal)existing.Height;
         WidgetX = (decimal)existing.X;
         WidgetY = (decimal)existing.Y;
+        
+        _editSensorType = config.Devices.FirstOrDefault(d => d.Id == existing.DeviceId)
+            ?.Sensors.FirstOrDefault(s => s.Tag == existing.Sensor)?.DataType;
+        InputMin = existing.Min.HasValue ? (decimal)existing.Min.Value : null;
+        InputMax = existing.Max.HasValue ? (decimal)existing.Max.Value : null;
+        WriteValue = (decimal)(existing.WriteValue ?? 1);
     }
     // Переносить поля віджета з діалогу в конфіг; false, якщо є помилка валідації
     private bool ApplyWidgetSettings(WidgetConfig widget)
@@ -187,10 +208,28 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
                 widget.Title = "Нотатка";   // використовується в запиті на видалення
                 widget.Unit = "";
                 return true;
+            
+            case "Input":
+                if (InputIsBool)
+                {
+                    widget.WriteValue = (double)(WriteValue ?? 1);
+                }
+                else
+                {
+                    if (InputMin is { } lowLimit && InputMax is { } highLimit && highLimit <= lowLimit)
+                    {
+                        ErrorMessage = "Максимум має бути більшим за мінімум.";
+                        return false;
+                    }
+                    widget.Min = InputMin.HasValue ? (double)InputMin.Value : null;
+                    widget.Max = InputMax.HasValue ? (double)InputMax.Value : null;
+                }
+                break;
         }
 
         widget.Title = string.IsNullOrWhiteSpace(Title) ? widget.Sensor : Title.Trim();
         widget.Unit = (Unit ?? "").Trim();
+        
         return true;
     }
 
@@ -217,12 +256,13 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
     // ● на зв'язку, ○ не в мережі, ? не знайдено в Tailscale
     private static string StatusMark(TailscaleNode? node) => node == null ? "?" : node.Online ? "●" : "○";
 
-    partial void OnSelectedDeviceChanged(DeviceOption? value)
+    private void RefreshSensors()
     {
         Sensors.Clear();
-        if (value != null)
-            foreach (var sensor in value.Sensors)
-                Sensors.Add(sensor);
+        if (SelectedDevice != null)
+            foreach (var sensor in SelectedDevice.Sensors)
+                if (!IsInput || sensor.Area is "coil" or "holding")
+                    Sensors.Add(sensor);
 
         SelectedSensor = Sensors.FirstOrDefault();
 
@@ -230,6 +270,9 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
         IsNewSensor = Sensors.Count == 0;
         ToggleNewSensorCommand.NotifyCanExecuteChanged();
     }
+
+    partial void OnSelectedDeviceChanged(DeviceOption? value) => RefreshSensors();
+    partial void OnSelectedTypeChanged(string value) => RefreshSensors();
 
     partial void OnNewAreaChanged(string value)
     {
@@ -252,10 +295,11 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
         return IsNewSensor ? !string.IsNullOrWhiteSpace(NewTag) : SelectedSensor != null;
     }
     // Розмір нового віджета за замовчуванням
-    private static (double Width, double Height) DefaultSize(string type) => type switch
+    private static (double Width, double Height) DefaultSize(string type, bool isBool = false) => type switch
     {
         "Indicator" => (200.0, 120.0),
         "Note" => (300.0, 60.0),
+        "Input" => isBool ? (200.0, 100.0) : (260.0, 170.0),
         _ => (300.0, 200.0)
     };
 
@@ -311,6 +355,12 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
                 ErrorMessage = "Ім'я датчика не може містити символ \"/\".";
                 return;
             }
+            
+            if (IsInput && NewArea is not ("coil" or "holding"))
+            {
+                ErrorMessage = "Для віджета вводу потрібна функція coil або holding.";
+                return;
+            }
 
             if (option.Sensors.Any(s => string.Equals(s.Tag, sensorTag, StringComparison.OrdinalIgnoreCase)))
             {
@@ -354,6 +404,19 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
 
         Result = new AddWidgetResult(widget, newDevice, newSensor);
         CloseRequested?.Invoke();
+    }
+    protected override void OnPropertyChanged(PropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+
+        if (e.PropertyName is nameof(SelectedType) or nameof(SelectedSensor) or nameof(IsNewSensor) or nameof(NewDataType))
+        {
+            OnPropertyChanged(nameof(IsInput));
+            OnPropertyChanged(nameof(InputIsBool));
+            OnPropertyChanged(nameof(InputIsButton));
+            OnPropertyChanged(nameof(InputIsNumeric));
+            OnPropertyChanged(nameof(HasUnit));
+        }
     }
 
     [RelayCommand]

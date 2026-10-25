@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using AvaloniaApplication1.Models;
 
 namespace AvaloniaApplication1.Services;
@@ -46,4 +47,8 @@ public sealed class DeviceManager
         foreach (var client in _clients.Values)
             _ = client.PushConfigAsync();
     }
+    public Task<string?> WriteAsync(string deviceId, string tag, double value) =>
+        _clients.TryGetValue(deviceId, out var client)
+            ? client.WriteAsync(tag, value)
+            : Task.FromResult<string?>("Пристрій не підключено.");
 }
