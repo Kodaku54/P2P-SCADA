@@ -28,6 +28,8 @@ public sealed class DeviceRow
     public required string Subtitle { get; init; }
     public ObservableCollection<SensorRow> Sensors { get; } = new();
     public bool HasNoSensors => Sensors.Count == 0;
+    public required DeviceConfig Device { get; init; }
+    public decimal? UpdateRate { get; set; }   // мс; поле вводу, застосовується кнопкою
 }
 
 public sealed partial class DevicesViewModel : ViewModelBase
@@ -62,7 +64,9 @@ public sealed partial class DevicesViewModel : ViewModelBase
             var row = new DeviceRow
             {
                 Title = $"{mark} {name}",
-                Subtitle = $"{device.IpAddress}:{device.Port}   ·   ID {device.Id}"
+                Subtitle = $"{device.IpAddress}   ·   ID {device.Id}",
+                Device = device,
+                UpdateRate = device.UpdateRateMs
             };
 
             foreach (var sensor in device.Sensors)
@@ -72,6 +76,16 @@ public sealed partial class DevicesViewModel : ViewModelBase
         }
 
         OnPropertyChanged(nameof(IsEmpty));
+    }
+    
+    [RelayCommand]
+    private void ApplyUpdateRate(DeviceRow? row)
+    {
+        if (row?.UpdateRate is not { } rate) return;
+
+        row.Device.UpdateRateMs = (int)rate;   // decimal → int
+        ConfigManager.Save(_config);
+        DeviceManager.Default.Sync();          // надсилає Pi оновлену конфігурацію
     }
 
     [RelayCommand]

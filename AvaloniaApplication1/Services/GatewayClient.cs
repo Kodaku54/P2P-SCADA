@@ -179,7 +179,7 @@ public sealed class GatewayClient : IDisposable
         {
             // Серіалізуємо в UI-потоці, бо перелік датчиків там же і змінюється
             var body = await Dispatcher.UIThread.InvokeAsync(() =>
-                JsonSerializer.Serialize(new { Sensors = _device.Sensors }));
+                JsonSerializer.Serialize(new { Sensors = _device.Sensors, UpdateRateMs = _device.UpdateRateMs }));
 
             using var content = new StringContent(body, Encoding.UTF8, "application/json");
             var response = await Http.PutAsync($"http://{host}:{GatewayPort}/config", content);

@@ -21,6 +21,15 @@
 
                                 <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" />
                                 <TextBlock Text="{Binding Subtitle}" FontSize="12" Opacity="0.6" />
+                                
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="Частота опитування, мс" VerticalAlignment="Center" />
+                                    <NumericUpDown Value="{Binding UpdateRate}" Minimum="100" Maximum="60000"
+                                                   Increment="100" FormatString="0" Width="140" />
+                                    <Button Content="Застосувати"
+                                            Command="{Binding #Root.((vm:DevicesViewModel)DataContext).ApplyUpdateRateCommand}"
+                                            CommandParameter="{Binding}" />
+                                </StackPanel>
 
                                 <TextBlock IsVisible="{Binding HasNoSensors}" Opacity="0.6"
                                            Text="Датчиків немає" />
