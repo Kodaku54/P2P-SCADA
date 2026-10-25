@@ -1,0 +1,27 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:widgets="clr-namespace:AvaloniaApplication1.ViewModels.Widgets"
+             x:Class="AvaloniaApplication1.Views.Widgets.IndicatorWidgetView"
+             x:DataType="widgets:IndicatorWidgetViewModel"
+             Classes.stale="{Binding IsStale}">
+    <Viewbox Width="{Binding Width}" Height="{Binding Height}" Stretch="Uniform">
+        <Border Width="200" Height="120" Background="#2B2A4A" CornerRadius="10" Padding="12">
+            <Grid RowDefinitions="Auto,*">
+                <TextBlock Text="{Binding Title}" FontSize="14" Foreground="#E0E0E0"
+                           HorizontalAlignment="Center" Margin="0,0,0,0" />
+
+                <StackPanel Grid.Row="1" Spacing="8"
+                            HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Ellipse Width="44" Height="44" Fill="{Binding StateBrush}"
+                             HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding StateText}" FontSize="20"
+                               Foreground="{Binding StateBrush}" HorizontalAlignment="Center" />
+                </StackPanel>
+
+                <TextBlock Grid.Row="1" Text="Немає зв'язку!" IsVisible="{Binding IsStale}"
+                           FontSize="12" Foreground="Tomato"
+                           HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,4" />
+            </Grid>
+        </Border>
+    </Viewbox>
+</UserControl>

@@ -60,6 +60,24 @@ public sealed class TagStore
         foreach (var (handlers, value) in pending)
             Notify(handlers, value);
     }
+    /// <summary>Позначає застарілим один тег (точний збіг). Якщо значення ще не було, створює порожнє зі Stale.</summary>
+    public void MarkTagStale(string tagId)
+    {
+        TagValue stale;
+        Action<TagValue>[] handlers;
+
+        lock (_lock)
+        {
+            stale = _values.TryGetValue(tagId, out var current)
+                ? current with { Quality = TagQuality.Stale }
+                : new TagValue(0, DateTimeOffset.UtcNow, TagQuality.Stale);
+
+            _values[tagId] = stale;
+            handlers = SnapshotHandlers(tagId);
+        }
+
+        Notify(handlers, stale);
+    }
 
     public bool TryGet(string tagId, out TagValue value)
     {

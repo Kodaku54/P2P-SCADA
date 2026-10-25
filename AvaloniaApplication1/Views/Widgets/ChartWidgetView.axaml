@@ -9,10 +9,17 @@
              x:Class="AvaloniaApplication1.Views.Widgets.ChartWidgetView"
              x:DataType="widgets:ChartWidgetViewModel"
              Classes.stale="{Binding IsStale}">
-    <Grid Background="#2B2A4A" Width="{Binding Width}" Height="{Binding Height}">
-        
-        <lvc:CartesianChart Series="{Binding Series}" Padding="2"  CornerRadius="30"/>
-        <TextBlock Text="Немає зв'язку!"
+    <Grid Background="#2B2A4A" Width="{Binding Width}" Height="{Binding Height}"
+          RowDefinitions="Auto,*">
+
+        <TextBlock Text="{Binding Title}"
+                   FontSize="14" Foreground="#E0E0E0"
+                   HorizontalAlignment="Center"
+                   Margin="0,8,0,0" />
+
+        <lvc:CartesianChart Background="#2B2A4A" ZoomMode="X" Grid.Row="1" Series="{Binding Series}" Padding="2" CornerRadius="10" />
+
+        <TextBlock Grid.RowSpan="2" Text="Немає зв'язку!"
                    IsVisible="{Binding IsStale}"
                    FontSize="14" Foreground="Tomato"
                    HorizontalAlignment="Right" VerticalAlignment="Top"

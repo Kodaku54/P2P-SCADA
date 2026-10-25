@@ -13,7 +13,7 @@
     <StackPanel Spacing="12" Margin="20">
 
         <!-- Пристрій -->
-        <StackPanel Spacing="4" IsVisible="{Binding !IsEditing}">
+        <StackPanel Spacing="4" IsVisible="{Binding ShowSensorPicker}">
             <TextBlock Text="Пристрій" />
             <ComboBox ItemsSource="{Binding Devices}"
                       SelectedItem="{Binding SelectedDevice}"
@@ -28,9 +28,51 @@
                        Text="Пристроїв немає. Перевірте Tailscale або додайте пристрій у config.json."
                        Foreground="IndianRed" TextWrapping="Wrap" />
         </StackPanel>
-
-        <!-- Датчик: наявний або новий -->
+        
+        <!-- Віджет -->
         <StackPanel Spacing="4" IsVisible="{Binding !IsEditing}">
+            <TextBlock Text="Тип віджета" />
+            <ComboBox ItemsSource="{Binding WidgetTypes}"
+                      SelectedItem="{Binding SelectedType}"
+                      HorizontalAlignment="Stretch" />
+        </StackPanel>
+        <TextBlock IsVisible="{Binding ShowSensorInfo}"
+                   Text="{Binding SensorInfo}" Opacity="0.7" />
+
+        <Grid IsVisible="{Binding IsEditing}" ColumnDefinitions="*,*">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,4,0">
+                <TextBlock Text="Позиція X" />
+                <NumericUpDown Value="{Binding WidgetX}" Minimum="0" Maximum="10000" FormatString="0" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="4" Margin="4,0,0,0">
+                <TextBlock Text="Позиція Y" />
+                <NumericUpDown Value="{Binding WidgetY}" Minimum="0" Maximum="10000" FormatString="0" />
+            </StackPanel>
+        </Grid>
+        <Grid IsVisible="{Binding IsEditing}" ColumnDefinitions="*,*">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,4,0">
+                <TextBlock Text="Ширина" />
+                <NumericUpDown Value="{Binding WidgetWidth}" Minimum="80" Maximum="3000" FormatString="0" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="4" Margin="4,0,0,0">
+                <TextBlock Text="Висота" />
+                <NumericUpDown Value="{Binding WidgetHeight}" Minimum="80" Maximum="3000" FormatString="0" />
+            </StackPanel>
+        </Grid>
+
+        <Grid IsVisible="{Binding !IsNote}" ColumnDefinitions="2*,*">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,4,0">
+                <TextBlock Text="Заголовок" />
+                <TextBox Text="{Binding Title}" Watermark="За замовчуванням: ім'я датчика" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="4" Margin="4,0,0,0" IsVisible="{Binding HasUnit}">
+                <TextBlock Text="Одиниці" />
+                <TextBox Text="{Binding Unit}" Watermark="°C" />
+            </StackPanel>
+        </Grid>
+        
+        <!-- Датчик: наявний або новий -->
+        <StackPanel Spacing="4" IsVisible="{Binding ShowSensorPicker}">
             <DockPanel>
                 <Button DockPanel.Dock="Right"
                         Content="{Binding NewSensorToggleText}"
@@ -91,48 +133,6 @@
             </Border>
         </StackPanel>
 
-        <!-- Віджет -->
-        <StackPanel Spacing="4" IsVisible="{Binding !IsEditing}">
-            <TextBlock Text="Тип віджета" />
-            <ComboBox ItemsSource="{Binding WidgetTypes}"
-                      SelectedItem="{Binding SelectedType}"
-                      HorizontalAlignment="Stretch" />
-        </StackPanel>
-        <TextBlock IsVisible="{Binding IsEditing}"
-                   Text="{Binding SensorInfo}" Opacity="0.7" />
-
-        <Grid IsVisible="{Binding IsEditing}" ColumnDefinitions="*,*">
-            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,4,0">
-                <TextBlock Text="Позиція X" />
-                <NumericUpDown Value="{Binding WidgetX}" Minimum="0" Maximum="10000" FormatString="0" />
-            </StackPanel>
-            <StackPanel Grid.Column="1" Spacing="4" Margin="4,0,0,0">
-                <TextBlock Text="Позиція Y" />
-                <NumericUpDown Value="{Binding WidgetY}" Minimum="0" Maximum="10000" FormatString="0" />
-            </StackPanel>
-        </Grid>
-        <Grid IsVisible="{Binding IsEditing}" ColumnDefinitions="*,*">
-            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,4,0">
-                <TextBlock Text="Ширина" />
-                <NumericUpDown Value="{Binding WidgetWidth}" Minimum="80" Maximum="3000" FormatString="0" />
-            </StackPanel>
-            <StackPanel Grid.Column="1" Spacing="4" Margin="4,0,0,0">
-                <TextBlock Text="Висота" />
-                <NumericUpDown Value="{Binding WidgetHeight}" Minimum="80" Maximum="3000" FormatString="0" />
-            </StackPanel>
-        </Grid>
-
-        <Grid ColumnDefinitions="2*,*">
-            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,4,0">
-                <TextBlock Text="Заголовок" />
-                <TextBox Text="{Binding Title}" Watermark="За замовчуванням: ім'я датчика" />
-            </StackPanel>
-            <StackPanel Grid.Column="1" Spacing="4" Margin="4,0,0,0">
-                <TextBlock Text="Одиниці" />
-                <TextBox Text="{Binding Unit}" Watermark="°C" />
-            </StackPanel>
-        </Grid>
-
         <!-- Тільки Gauge -->
         <Grid IsVisible="{Binding IsGauge}" ColumnDefinitions="*,*">
             <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,4,0">
@@ -149,6 +149,47 @@
         <StackPanel IsVisible="{Binding IsChart}" Spacing="4">
             <TextBlock Text="Кількість точок на графіку" />
             <NumericUpDown Value="{Binding MaxPoints}" Minimum="2" Maximum="1000" FormatString="0" />
+        </StackPanel>
+        
+        <!-- Тільки Indicator -->
+        <Grid IsVisible="{Binding IsIndicator}" ColumnDefinitions="*,*">
+            <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,4,0">
+                <TextBlock Text="Підпис «увімкнено» (1)" />
+                <TextBox Text="{Binding OnText}" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="4" Margin="4,0,0,0">
+                <TextBlock Text="Підпис «вимкнено» (0)" />
+                <TextBox Text="{Binding OffText}" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Тільки Note -->
+        <StackPanel IsVisible="{Binding IsNote}" Spacing="8">
+            <StackPanel Spacing="4">
+                <TextBlock Text="Текст" />
+                <TextBox Text="{Binding NoteText}" AcceptsReturn="True" TextWrapping="Wrap" Height="90" />
+            </StackPanel>
+            <StackPanel Spacing="4">
+                <TextBlock Text="Розмір шрифту" />
+                <NumericUpDown Value="{Binding FontSize}" Minimum="8" Maximum="200" FormatString="0" />
+            </StackPanel>
+        </StackPanel>
+        
+        <!-- Input, датчик Bool -->
+        <StackPanel IsVisible="{Binding InputIsButton}" Spacing="4">
+            <TextBlock Text="Значення, яке записує кнопка (1 або 0)" />
+            <NumericUpDown Value="{Binding WriteValue}" Minimum="0" Maximum="1" FormatString="0" />
+        </StackPanel>
+
+        <!-- Input, числовий датчик -->
+        <StackPanel IsVisible="{Binding InputIsNumeric}" Spacing="4">
+            <TextBlock Text="Межі введення (необов'язково)" />
+            <Grid ColumnDefinitions="*,*">
+                <NumericUpDown Grid.Column="0" Margin="0,0,4,0" Value="{Binding InputMin}"
+                               Watermark="Мінімум" FormatString="0.##" />
+                <NumericUpDown Grid.Column="1" Margin="4,0,0,0" Value="{Binding InputMax}"
+                               Watermark="Максимум" FormatString="0.##" />
+            </Grid>
         </StackPanel>
 
         <TextBlock Text="{Binding ErrorMessage}" Foreground="IndianRed" TextWrapping="Wrap" />
