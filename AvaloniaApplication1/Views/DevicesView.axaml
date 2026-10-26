@@ -37,10 +37,16 @@
                                 <ItemsControl ItemsSource="{Binding Sensors}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate x:DataType="vm:SensorRow">
-                                            <Grid ColumnDefinitions="*,Auto" Margin="0,2">
+                                            <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,2">
                                                 <TextBlock Grid.Column="0" Text="{Binding Text}"
                                                            FontFamily="Monospace" VerticalAlignment="Center" />
-                                                <Button Grid.Column="1" Content="✕"
+                                                <Button Grid.Column="1" Content="✎"
+                                                        ToolTip.Tip="Редагувати датчик"
+                                                        Click="EditSensor_Click"
+                                                        Padding="6,2"
+                                                        Background="Transparent"
+                                                        BorderThickness="0" />
+                                                <Button Grid.Column="2" Content="✕"
                                                         ToolTip.Tip="Видалити датчик"
                                                         Command="{Binding #Root.((vm:DevicesViewModel)DataContext).DeleteSensorCommand}"
                                                         CommandParameter="{Binding}"

@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using AvaloniaApplication1.Models;
 using AvaloniaApplication1.Services;
+using Avalonia.Controls;
+using AvaloniaApplication1.Views;
 using CommunityToolkit.Mvvm.Input;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
@@ -118,6 +120,32 @@ public sealed partial class DevicesViewModel : ViewModelBase
         row.Device.Sensors.Remove(row.Sensor);
         ConfigManager.Save(_config);
         DeviceManager.Default.Sync();   // Pi має дізнатися, що датчика більше немає
+        Refresh();
+    }
+    public async Task EditSensorAsync(SensorRow row, Window owner)
+    {
+        // Чи є віджети вводу на цьому датчику (на всіх дашбордах)
+        var usedByInput = _config.Dashboards
+            .SelectMany(d => d.Widgets)
+            .Any(w => w.DeviceId == row.Device.Id
+                      && w.Sensor == row.Sensor.Tag
+                      && w.Type.Equals("Input", StringComparison.OrdinalIgnoreCase));
+
+        var dialogVm = new EditSensorViewModel(row.Sensor, usedByInput);
+        var dialog = new EditSensorWindow { DataContext = dialogVm };
+        dialogVm.CloseRequested += () => dialog.Close();
+
+        await dialog.ShowDialog(owner);
+
+        if (!dialogVm.Saved) return;   // скасовано
+
+        ConfigManager.Save(_config);
+
+        // Режим віджета вводу залежить від типу датчика, тому створюємо такі віджети заново
+        foreach (var dashboard in _getDashboards())
+            dashboard.RebuildInputWidgetsOf(row.Device.Id, row.Sensor.Tag);
+
+        DeviceManager.Default.Sync();   // Pi отримує нові параметри датчика
         Refresh();
     }
 }
