@@ -32,11 +32,11 @@ public partial class InputWidgetViewModel : WidgetViewModelBase
     public bool IsNumeric => Mode != InputMode.Button;
     
     public override double MinWidgetWidth => IsButton ? 100 : 200;
-    public override double MinWidgetHeight => IsButton ? 80 : 110;
+    public override double MinWidgetHeight => IsButton ? 60 : 90;
 
     [ObservableProperty] private string _inputText = "";
     [ObservableProperty] private string _currentText = "—";
-    [ObservableProperty] private string _statusText = "";
+    [ObservableProperty] private string? _statusText;
     [ObservableProperty] private IBrush _statusBrush = Brushes.LightGreen;
 
     public InputWidgetViewModel(string deviceId, SensorConfig sensor, string title, WidgetConfig config, Action persist)
@@ -146,17 +146,17 @@ public partial class InputWidgetViewModel : WidgetViewModelBase
         _messageIsError = isError;
         UpdateStatus();
 
-        // Повідомлення про успіх зникає саме
+        var version = ++_messageVersion;
+
+        // Успіх зникає сам, помилка лишається до наступної спроби або зміни тексту
         if (text != null && !isError)
-            _ = ClearLaterAsync(++_messageVersion);
-        else
-            _messageVersion++;
+            _ = ClearLaterAsync(version, 2500);
     }
 
-    private async Task ClearLaterAsync(int version)
+    private async Task ClearLaterAsync(int version, int delayMs)
     {
-        await Task.Delay(2500);
-        if (version != _messageVersion) return;
+        await Task.Delay(delayMs);
+        if (version != _messageVersion) return;   // з'явилося нове повідомлення, це вже не актуально
         _message = null;
         UpdateStatus();
     }
@@ -175,7 +175,14 @@ public partial class InputWidgetViewModel : WidgetViewModelBase
         }
         else
         {
-            StatusText = "";
+            StatusText = null;                  // підказки немає
+            StatusBrush = Brushes.Transparent;  // рамки немає
         }
+    }
+    partial void OnInputTextChanged(string value)
+    {
+        // Користувач почав виправляти ввід: стара помилка вже не актуальна
+        if (_messageIsError)
+            SetMessage(null);
     }
 }
