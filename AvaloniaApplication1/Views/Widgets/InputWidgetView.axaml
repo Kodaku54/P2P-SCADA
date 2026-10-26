@@ -12,6 +12,13 @@
            ToolTip.HorizontalOffset="12"
            ToolTip.VerticalOffset="18">
 
+        <ToolTip.IsOpen>
+            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                <Binding Path="IsPointerOver" RelativeSource="{RelativeSource Self}" />
+                <Binding Path="StatusText" Converter="{x:Static StringConverters.IsNotNullOrEmpty}" />
+            </MultiBinding>
+        </ToolTip.IsOpen>
+
         <!-- Датчик Bool: кнопка на всю картку -->
         <Border IsVisible="{Binding IsButton}"
                 Background="#2B2A4A" CornerRadius="10" Padding="12" ClipToBounds="True"
