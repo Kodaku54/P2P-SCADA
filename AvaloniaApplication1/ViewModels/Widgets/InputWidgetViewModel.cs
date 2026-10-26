@@ -30,6 +30,9 @@ public partial class InputWidgetViewModel : WidgetViewModelBase
     public InputMode Mode { get; }
     public bool IsButton => Mode == InputMode.Button;
     public bool IsNumeric => Mode != InputMode.Button;
+    
+    public override double MinWidgetWidth => IsButton ? 100 : 200;
+    public override double MinWidgetHeight => IsButton ? 80 : 110;
 
     [ObservableProperty] private string _inputText = "";
     [ObservableProperty] private string _currentText = "—";

@@ -20,7 +20,6 @@ public partial class DashboardView : UserControl
     private Point _menuPoint;
     private const double Grid = 5;          // крок прив'язки до сітки; 1 = без прив'язки
     private const double ResizeZone = 20;    // розмір «ручки» в правому нижньому куті
-    private const double MinWidgetSize = 50;
 
     private WidgetViewModelBase? _dragWidget;
     private bool _resizing;
@@ -142,8 +141,8 @@ public partial class DashboardView : UserControl
 
         if (_resizing)
         {
-            _dragWidget.Width = Math.Max(MinWidgetSize, Snap(_startW + delta.X));
-            _dragWidget.Height = Math.Max(MinWidgetSize, Snap(_startH + delta.Y));
+            _dragWidget.Width = Math.Max(_dragWidget.MinWidgetWidth, Snap(_startW + delta.X));
+            _dragWidget.Height = Math.Max(_dragWidget.MinWidgetHeight, Snap(_startH + delta.Y));
         }
         else
         {
