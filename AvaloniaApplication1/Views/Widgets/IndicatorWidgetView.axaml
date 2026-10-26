@@ -4,8 +4,13 @@
              x:Class="AvaloniaApplication1.Views.Widgets.IndicatorWidgetView"
              x:DataType="widgets:IndicatorWidgetViewModel"
              Classes.stale="{Binding IsStale}">
-    <Viewbox Width="{Binding Width}" Height="{Binding Height}" Stretch="Uniform">
-        <Border Width="200" Height="120" Background="#2B2A4A" CornerRadius="10" Padding="12">
+    <Viewbox Width="{Binding Width}" Height="{Binding Height}" Stretch="Uniform"
+             ToolTip.Tip="{Binding StatusText}"
+             ToolTip.Placement="Pointer"
+             ToolTip.HorizontalOffset="12"
+             ToolTip.VerticalOffset="18">
+        <Border Width="200" Height="120" Background="#2B2A4A" CornerRadius="10" Padding="12"
+                BorderBrush="{Binding StatusBrush}" BorderThickness="2">
             <Grid RowDefinitions="Auto,*">
                 <TextBlock Text="{Binding Title}" FontSize="14" Foreground="#E0E0E0"
                            HorizontalAlignment="Center" Margin="0,0,0,0" />
@@ -17,10 +22,6 @@
                     <TextBlock Text="{Binding StateText}" FontSize="20"
                                Foreground="{Binding StateBrush}" HorizontalAlignment="Center" />
                 </StackPanel>
-
-                <TextBlock Grid.Row="1" Text="Немає зв'язку!" IsVisible="{Binding IsStale}"
-                           FontSize="12" Foreground="Tomato"
-                           HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,4" />
             </Grid>
         </Border>
     </Viewbox>

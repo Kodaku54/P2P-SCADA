@@ -23,8 +23,14 @@
             </Style.Animations>
         </Style>
     </UserControl.Styles>
-    <Viewbox Width="{Binding Width}" Height="{Binding Height}" Stretch="Uniform">
+    <Viewbox Width="{Binding Width}" Height="{Binding Height}" Stretch="Uniform"
+             ToolTip.Tip="{Binding StatusText}"
+             ToolTip.Placement="Pointer"
+             ToolTip.HorizontalOffset="12"
+             ToolTip.VerticalOffset="18">
         <Grid Width="250" Height="250">
+            <Ellipse Stroke="{Binding StatusBrush}" StrokeThickness="3" Margin="17"
+                     IsHitTestVisible="False"/>
             <Ellipse Fill="#2B2A4A" Stroke="#403E5C" StrokeThickness="15" Margin="20"/>
             <Arc StartAngle="270" 
                  SweepAngle="{Binding SweepAngle}" 
@@ -63,11 +69,6 @@
                            TextTrimming="CharacterEllipsis"
                            ToolTip.Tip="{Binding Title}" />
             </StackPanel>
-            <TextBlock Text="Немає зв'язку!"
-                       IsVisible="{Binding IsStale}"
-                       FontSize="16" Foreground="Tomato"
-                       HorizontalAlignment="Center" VerticalAlignment="Top"
-                       Margin="0,6,0,0" />
         </Grid>
     </Viewbox>
 </UserControl>

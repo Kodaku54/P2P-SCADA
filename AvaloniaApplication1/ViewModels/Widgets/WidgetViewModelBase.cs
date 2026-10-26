@@ -1,6 +1,7 @@
 using System;
 using AvaloniaApplication1.Models;
 using AvaloniaApplication1.Services;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AvaloniaApplication1.ViewModels.Widgets;
@@ -12,6 +13,8 @@ public partial class WidgetViewModelBase : ViewModelBase
     [ObservableProperty] private double _y;
     [ObservableProperty] private double _width = 400;
     [ObservableProperty] private double _height = 250;
+    [ObservableProperty] private string? _statusText;
+    [ObservableProperty] private IBrush _statusBrush = Brushes.Transparent;
     
     // Найменший розмір, при якому вміст віджета не налазить сам на себе
     public virtual double MinWidgetWidth => 80;
@@ -47,6 +50,13 @@ public partial class WidgetViewModelBase : ViewModelBase
             Config.Height = Height;
         }
     }
+    protected virtual void UpdateStatus()
+    {
+        StatusText = IsStale ? "Немає зв'язку!" : null;
+        StatusBrush = IsStale ? Brushes.Tomato : Brushes.Transparent;
+    }
+    // Метод згенерує CommunityToolkit для властивості IsStale, він викликається після кожної її зміни
+    partial void OnIsStaleChanged(bool value) => UpdateStatus();
 
     public void Dispose()
     {

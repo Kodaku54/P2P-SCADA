@@ -10,7 +10,11 @@
              x:DataType="widgets:ChartWidgetViewModel"
              Classes.stale="{Binding IsStale}">
     <Grid Background="#2B2A4A" Width="{Binding Width}" Height="{Binding Height}"
-          RowDefinitions="Auto,*">
+          RowDefinitions="Auto,*"
+          ToolTip.Tip="{Binding StatusText}"
+          ToolTip.Placement="Pointer"
+          ToolTip.HorizontalOffset="12"
+          ToolTip.VerticalOffset="18">
 
         <TextBlock Text="{Binding Title}"
                    FontSize="14" Foreground="#E0E0E0"
@@ -18,11 +22,7 @@
                    Margin="0,8,0,0" />
 
         <lvc:CartesianChart Background="#2B2A4A" ZoomMode="X" Grid.Row="1" Series="{Binding Series}" Padding="2" CornerRadius="10" />
-
-        <TextBlock Grid.RowSpan="2" Text="Немає зв'язку!"
-                   IsVisible="{Binding IsStale}"
-                   FontSize="14" Foreground="Tomato"
-                   HorizontalAlignment="Right" VerticalAlignment="Top"
-                   Margin="0,8,12,0" />
+        <Border Grid.RowSpan="2" BorderBrush="{Binding StatusBrush}" BorderThickness="2"
+                IsHitTestVisible="False" />
     </Grid>
 </UserControl>

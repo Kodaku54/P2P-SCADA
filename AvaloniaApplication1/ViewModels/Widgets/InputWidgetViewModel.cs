@@ -37,7 +37,6 @@ public partial class InputWidgetViewModel : WidgetViewModelBase
     [ObservableProperty] private string _inputText = "";
     [ObservableProperty] private string _currentText = "—";
     [ObservableProperty] private string? _statusText;
-    [ObservableProperty] private IBrush _statusBrush = Brushes.LightGreen;
 
     public InputWidgetViewModel(string deviceId, SensorConfig sensor, string title, WidgetConfig config, Action persist)
     {
@@ -79,9 +78,8 @@ public partial class InputWidgetViewModel : WidgetViewModelBase
 
         PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName != nameof(IsStale)) return;
-            ApplyCommand.NotifyCanExecuteChanged();
-            UpdateStatus();
+            if (e.PropertyName == nameof(IsStale))
+                ApplyCommand.NotifyCanExecuteChanged();
         };
     }
 
@@ -161,22 +159,16 @@ public partial class InputWidgetViewModel : WidgetViewModelBase
         UpdateStatus();
     }
 
-    private void UpdateStatus()
+    protected override void UpdateStatus()
     {
         if (_message != null)
         {
             StatusText = _message;
             StatusBrush = _messageIsError ? Brushes.Tomato : Brushes.LightGreen;
         }
-        else if (IsStale)
-        {
-            StatusText = "Немає зв'язку!";
-            StatusBrush = Brushes.Tomato;
-        }
         else
         {
-            StatusText = null;                  // підказки немає
-            StatusBrush = Brushes.Transparent;  // рамки немає
+            base.UpdateStatus();   // стан зв'язку обробляє базовий клас
         }
     }
     partial void OnInputTextChanged(string value)
