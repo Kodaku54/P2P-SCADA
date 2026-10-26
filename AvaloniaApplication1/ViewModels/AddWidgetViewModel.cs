@@ -299,7 +299,7 @@ public sealed partial class AddWidgetViewModel : ViewModelBase
     {
         "Indicator" => (200.0, 120.0),
         "Note" => (300.0, 60.0),
-        "Input" => isBool ? (200.0, 100.0) : (260.0, 170.0),
+        "Input" => isBool ? (200.0, 100.0) : (260.0, 130.0),
         _ => (300.0, 200.0)
     };
 

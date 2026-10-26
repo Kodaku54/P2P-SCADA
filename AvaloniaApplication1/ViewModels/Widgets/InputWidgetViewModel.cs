@@ -1,7 +1,5 @@
 using System;
-using System.Collections.ObjectModel;
 using System.Globalization;
-using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Media;
 using AvaloniaApplication1.Models;
@@ -16,8 +14,6 @@ public enum InputMode { Button, Integer, Decimal }
 // Віджет вводу: поведінка залежить від типу датчика (Bool: кнопка, Int: ціле число, Float/Double: дробове)
 public partial class InputWidgetViewModel : WidgetViewModelBase
 {
-    private const int MaxRecent = 5;
-
     private readonly string _deviceId;
     private readonly string _sensorTag;
     private readonly WidgetConfig _widgetConfig;
@@ -34,11 +30,8 @@ public partial class InputWidgetViewModel : WidgetViewModelBase
     public InputMode Mode { get; }
     public bool IsButton => Mode == InputMode.Button;
     public bool IsNumeric => Mode != InputMode.Button;
-    public ObservableCollection<double> Recent { get; } = new();
-    public bool HasRecent => Recent.Count > 0;
 
     [ObservableProperty] private string _inputText = "";
-    [ObservableProperty] private double? _selectedRecent;
     [ObservableProperty] private string _currentText = "—";
     [ObservableProperty] private string _statusText = "";
     [ObservableProperty] private IBrush _statusBrush = Brushes.LightGreen;
@@ -73,13 +66,10 @@ public partial class InputWidgetViewModel : WidgetViewModelBase
         _low = config.Min.HasValue ? Math.Max(low, config.Min.Value) : low;
         _high = config.Max.HasValue ? Math.Min(high, config.Max.Value) : high;
 
-        if (IsNumeric && config.RecentValues != null)
-            foreach (var v in config.RecentValues.Take(MaxRecent))
-                Recent.Add(v);
-
-        Recent.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasRecent));
-        if (Recent.Count > 0) InputText = Format(Recent[0]);
-
+        // Поле вводу починається з останнього записаного значення
+        if (IsNumeric && config.LastValue is { } lastValue)
+            InputText = Format(lastValue);
+        
         // Стан зв'язку береться з тега датчика, тому датчик має опитуватись
         BindTag(DashboardFactory.TagId(deviceId, sensor.Tag),
             tagValue => CurrentText = $"{tagValue.Value:0.##} {_unit}".Trim());
@@ -115,7 +105,11 @@ public partial class InputWidgetViewModel : WidgetViewModelBase
         }
 
         SetMessage("Записано");
-        if (IsNumeric) RememberValue(value);
+        if (IsNumeric)
+        {
+            _widgetConfig.LastValue = value;   // запам'ятовуємо лише після успішного запису
+            _persist();
+        }
     }
 
     private bool TryReadInput(out double value)
@@ -141,24 +135,6 @@ public partial class InputWidgetViewModel : WidgetViewModelBase
         }
 
         return true;
-    }
-
-    // Обране в списку значення потрапляє в поле (записується лише після «Записати»)
-    partial void OnSelectedRecentChanged(double? value)
-    {
-        if (value is not { } v) return;
-        InputText = Format(v);
-        SelectedRecent = null;   // щоб те саме значення можна було обрати ще раз
-    }
-
-    private void RememberValue(double value)
-    {
-        Recent.Remove(value);
-        Recent.Insert(0, value);
-        while (Recent.Count > MaxRecent) Recent.RemoveAt(Recent.Count - 1);
-
-        _widgetConfig.RecentValues = Recent.ToList();
-        _persist();
     }
 
     private void SetMessage(string? text, bool isError = false)

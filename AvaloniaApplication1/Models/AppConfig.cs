@@ -47,5 +47,5 @@ public class WidgetConfig
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public double? FontSize { get; set; }   // Note
     // Запис
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public double? WriteValue { get; set; }          // Input (Bool): що записує кнопка
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public List<double>? RecentValues { get; set; } // Input (число): останні введені
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public double? LastValue { get; set; }   // Input (число): останнє записане значення
 }
