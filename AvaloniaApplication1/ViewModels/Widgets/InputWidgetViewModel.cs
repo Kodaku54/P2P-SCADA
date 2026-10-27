@@ -36,7 +36,6 @@ public partial class InputWidgetViewModel : WidgetViewModelBase
 
     [ObservableProperty] private string _inputText = "";
     [ObservableProperty] private string _currentText = "—";
-    [ObservableProperty] private string? _statusText;
 
     public InputWidgetViewModel(string deviceId, SensorConfig sensor, string title, WidgetConfig config, Action persist)
     {

@@ -9,6 +9,7 @@
              x:Class="AvaloniaApplication1.Views.Widgets.ChartWidgetView"
              x:DataType="widgets:ChartWidgetViewModel"
              Classes.stale="{Binding IsStale}">
+    
     <Grid Background="#2B2A4A" Width="{Binding Width}" Height="{Binding Height}"
           RowDefinitions="Auto,*"
           ToolTip.Tip="{Binding StatusText}"
