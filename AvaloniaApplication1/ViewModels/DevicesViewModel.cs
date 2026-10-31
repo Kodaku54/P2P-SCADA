@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using AvaloniaApplication1.Models;
 using AvaloniaApplication1.Services;
+using Avalonia.Controls;
+using AvaloniaApplication1.Views;
 using CommunityToolkit.Mvvm.Input;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
@@ -28,6 +30,8 @@ public sealed class DeviceRow
     public required string Subtitle { get; init; }
     public ObservableCollection<SensorRow> Sensors { get; } = new();
     public bool HasNoSensors => Sensors.Count == 0;
+    public required DeviceConfig Device { get; init; }
+    public decimal? UpdateRate { get; set; }   // мс; поле вводу, застосовується кнопкою
 }
 
 public sealed partial class DevicesViewModel : ViewModelBase
@@ -62,7 +66,9 @@ public sealed partial class DevicesViewModel : ViewModelBase
             var row = new DeviceRow
             {
                 Title = $"{mark} {name}",
-                Subtitle = $"{device.IpAddress}:{device.Port}   ·   ID {device.Id}"
+                Subtitle = $"{device.IpAddress}   ·   ID {device.Id}",
+                Device = device,
+                UpdateRate = device.UpdateRateMs
             };
 
             foreach (var sensor in device.Sensors)
@@ -72,6 +78,16 @@ public sealed partial class DevicesViewModel : ViewModelBase
         }
 
         OnPropertyChanged(nameof(IsEmpty));
+    }
+    
+    [RelayCommand]
+    private void ApplyUpdateRate(DeviceRow? row)
+    {
+        if (row?.UpdateRate is not { } rate) return;
+
+        row.Device.UpdateRateMs = (int)rate;   // decimal → int
+        ConfigManager.Save(_config);
+        DeviceManager.Default.Sync();          // надсилає Pi оновлену конфігурацію
     }
 
     [RelayCommand]
@@ -104,6 +120,32 @@ public sealed partial class DevicesViewModel : ViewModelBase
         row.Device.Sensors.Remove(row.Sensor);
         ConfigManager.Save(_config);
         DeviceManager.Default.Sync();   // Pi має дізнатися, що датчика більше немає
+        Refresh();
+    }
+    public async Task EditSensorAsync(SensorRow row, Window owner)
+    {
+        // Чи є віджети вводу на цьому датчику (на всіх дашбордах)
+        var usedByInput = _config.Dashboards
+            .SelectMany(d => d.Widgets)
+            .Any(w => w.DeviceId == row.Device.Id
+                      && w.Sensor == row.Sensor.Tag
+                      && w.Type.Equals("Input", StringComparison.OrdinalIgnoreCase));
+
+        var dialogVm = new EditSensorViewModel(row.Sensor, usedByInput);
+        var dialog = new EditSensorWindow { DataContext = dialogVm };
+        dialogVm.CloseRequested += () => dialog.Close();
+
+        await dialog.ShowDialog(owner);
+
+        if (!dialogVm.Saved) return;   // скасовано
+
+        ConfigManager.Save(_config);
+
+        // Режим віджета вводу залежить від типу датчика, тому створюємо такі віджети заново
+        foreach (var dashboard in _getDashboards())
+            dashboard.RebuildInputWidgetsOf(row.Device.Id, row.Sensor.Tag);
+
+        DeviceManager.Default.Sync();   // Pi отримує нові параметри датчика
         Refresh();
     }
 }

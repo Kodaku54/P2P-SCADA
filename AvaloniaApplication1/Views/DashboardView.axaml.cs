@@ -16,11 +16,19 @@ namespace AvaloniaApplication1.Views;
 
 public partial class DashboardView : UserControl
 {
-    private double _zoom = 1.0;
+    private const double MinZoom = 0.2;
+    private const double MaxZoom = 5.0;
+    private const double ZoomStep = 1.1;       // зміна масштабу за один крок колеса
+    private const double ZoomSmoothing = 0.8;  // 0..1: частка шляху до цілі за кадр (1 = без анімації)
+
+    private double _zoom = 1.0;         // поточний масштаб (змінюється в анімації)
+    private double _targetZoom = 1.0;   // масштаб, до якого рухаємось
+    private Point _anchorView;          // точка в області перегляду, навколо якої масштабуємо
+    private Point _anchorContent;       // та сама точка у координатах схеми (без масштабу)
+    private readonly DispatcherTimer _zoomTimer = new() { Interval = TimeSpan.FromMilliseconds(16) };
     private Point _menuPoint;
     private const double Grid = 5;          // крок прив'язки до сітки; 1 = без прив'язки
     private const double ResizeZone = 20;    // розмір «ручки» в правому нижньому куті
-    private const double MinWidgetSize = 50;
 
     private WidgetViewModelBase? _dragWidget;
     private bool _resizing;
@@ -42,6 +50,7 @@ public partial class DashboardView : UserControl
     {
         InitializeComponent();
         Scroller.AddHandler(PointerWheelChangedEvent, OnWheel, RoutingStrategies.Tunnel);
+        _zoomTimer.Tick += OnZoomTick;
         // Запам'ятовуємо точку правого кліку у координатах схеми (масштаб і прокрутка вже враховані)
         WidgetsHost.AddHandler(PointerPressedEvent, OnHostPointerPressed, RoutingStrategies.Tunnel);
         WidgetsHost.PointerMoved += OnHostPointerMoved;
@@ -142,8 +151,8 @@ public partial class DashboardView : UserControl
 
         if (_resizing)
         {
-            _dragWidget.Width = Math.Max(MinWidgetSize, Snap(_startW + delta.X));
-            _dragWidget.Height = Math.Max(MinWidgetSize, Snap(_startH + delta.Y));
+            _dragWidget.Width = Math.Max(_dragWidget.MinWidgetWidth, Snap(_startW + delta.X));
+            _dragWidget.Height = Math.Max(_dragWidget.MinWidgetHeight, Snap(_startH + delta.Y));
         }
         else
         {
@@ -186,31 +195,57 @@ public partial class DashboardView : UserControl
     private void OnWheel(object? sender, PointerWheelEventArgs e)
     {
         if (!e.KeyModifiers.HasFlag(KeyModifiers.Control)) return;
-        SetZoom(_zoom * (e.Delta.Y > 0 ? 1.1 : 1 / 1.1), e.GetPosition(Scroller));
+
+        // Рахуємо від цільового масштабу, а не від поточного: кілька швидких кроків колеса накопичуються
+        SetZoom(_targetZoom * (e.Delta.Y > 0 ? ZoomStep : 1 / ZoomStep), e.GetPosition(Scroller));
         e.Handled = true;
     }
+    // Задає новий цільовий масштаб; сама зміна відбувається плавно в OnZoomTick
     private void SetZoom(double value, Point anchor)
     {
-        var newZoom = Math.Clamp(value, 0.2, 3.0);
-        if (Math.Abs(newZoom - _zoom) < 0.0001) return;
+        var newTarget = Math.Clamp(value, MinZoom, MaxZoom);
+        if (Math.Abs(newTarget - _targetZoom) < 0.0001) return;
 
-        // Точка схеми під якорем у координатах без масштабу
-        var contentX = (Scroller.Offset.X + anchor.X) / _zoom;
-        var contentY = (Scroller.Offset.Y + anchor.Y) / _zoom;
+        // Запам'ятовуємо точку схеми під якорем: масштабування триматиме її на місці.
+        // _zoom і Offset завжди актуальні, бо їх виставляємо синхронно (див. ApplyZoom)
+        _anchorView = anchor;
+        _anchorContent = new Point((Scroller.Offset.X + anchor.X) / _zoom,
+            (Scroller.Offset.Y + anchor.Y) / _zoom);
 
-        _zoom = newZoom;
-        ZoomHost.LayoutTransform = new ScaleTransform(_zoom, _zoom);
-
-        // Розмір вмісту оновиться після проходу layout, тож зсув виставляємо трохи пізніше
-        Dispatcher.UIThread.Post(() =>
-        {
-            Scroller.Offset = new Vector(contentX * _zoom - anchor.X,
-                contentY * _zoom - anchor.Y);
-        }, DispatcherPriority.Loaded);
+        _targetZoom = newTarget;
+        _zoomTimer.Start();
     }
+    // Один кадр анімації: наближає масштаб до цілі
+    private void OnZoomTick(object? sender, EventArgs e)
+    {
+        var diff = _targetZoom - _zoom;
+
+        if (Math.Abs(diff) < 0.002)
+        {
+            ApplyZoom(_targetZoom);   // фінальний точний масштаб
+            _zoomTimer.Stop();
+            return;
+        }
+
+        ApplyZoom(_zoom + diff * ZoomSmoothing);
+    }
+
+    private void ApplyZoom(double zoom)
+    {
+        _zoom = zoom;
+        ZoomHost.LayoutTransform = new ScaleTransform(zoom, zoom);
+
+        // Негайно перерахувати розмір вмісту, щоб ScrollViewer прийняв новий Offset
+        // до малювання кадру (раніше зсув виставлявся пізніше, звідси миготіння)
+        Scroller.UpdateLayout();
+
+        Scroller.Offset = new Vector(_anchorContent.X * zoom - _anchorView.X,
+            _anchorContent.Y * zoom - _anchorView.Y);
+    }
+
     private Point ViewportCenter => new(Scroller.Bounds.Width / 2, Scroller.Bounds.Height / 2);
 
-    private void ZoomIn_Click(object? s, RoutedEventArgs e)    => SetZoom(_zoom * 1.1, ViewportCenter);
-    private void ZoomOut_Click(object? s, RoutedEventArgs e)   => SetZoom(_zoom / 1.1, ViewportCenter);
+    private void ZoomIn_Click(object? s, RoutedEventArgs e)    => SetZoom(_targetZoom * ZoomStep, ViewportCenter);
+    private void ZoomOut_Click(object? s, RoutedEventArgs e)   => SetZoom(_targetZoom / ZoomStep, ViewportCenter);
     private void ZoomReset_Click(object? s, RoutedEventArgs e) => SetZoom(1.0, ViewportCenter);
 }

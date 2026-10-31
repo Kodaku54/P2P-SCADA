@@ -89,6 +89,24 @@ public partial class DashboardViewModel : ViewModelBase
         if (_simulator != null)
             DashboardFactory.AddSimulatedSignal(_simulator, result.Widget);
     }
+    // Створює заново віджети вводу цього датчика (їхній режим залежить від типу датчика)
+    public void RebuildInputWidgetsOf(string deviceId, string sensor)
+    {
+        for (var i = 0; i < Widgets.Count; i++)
+        {
+            var old = Widgets[i];
+            var config = old.Config;
+
+            if (config == null || config.DeviceId != deviceId || config.Sensor != sensor) continue;
+            if (!config.Type.Equals("Input", StringComparison.OrdinalIgnoreCase)) continue;
+
+            var fresh = DashboardFactory.CreateWidget(_appConfig, config);
+            if (fresh == null) continue;
+
+            old.Dispose();       // відписуємо старий віджет від тега
+            Widgets[i] = fresh;  // заміна елемента в тому ж місці списку
+        }
+    }
     public async Task EditWidgetAsync(WidgetViewModelBase widget, Window owner)
     {
         if (widget.Config == null) return;

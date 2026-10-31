@@ -80,13 +80,27 @@ public sealed class GatewayClient : IDisposable
             finally
             {
                 _connected = false;
-                // Без зв'язку з Pi всі її значення застарілі
-                TagStore.Default.MarkStale($"{_device.Id}/");
+                MarkAllStale();   // без зв'язку з Pi всі її значення застарілі
             }
 
             try { await Task.Delay(RetryDelay, ct); }
             catch (OperationCanceledException) { break; }
         }
+    }
+    // Позначає застарілими всі теги пристрою, навіть ті, що ще не мали жодного значення
+// (наприклад, якщо застосунок запущено, коли Pi недоступна)
+    private void MarkAllStale()
+    {
+        // Теги, які вже мають значення (включно з тими, що зникли з конфігу)
+        TagStore.Default.MarkStale($"{_device.Id}/");
+
+        // Сенсори з конфігу: для тих, що значень не мали, MarkTagStale створює запис зі Stale.
+        // Post виконує код в UI-потоці, де безпечно читати список датчиків
+        Dispatcher.UIThread.Post(() =>
+        {
+            foreach (var sensor in _device.Sensors)
+                TagStore.Default.MarkTagStale(DashboardFactory.TagId(_device.Id, sensor.Tag));
+        });
     }
 
     private async Task ReceiveLoopAsync(ClientWebSocket ws, CancellationToken ct)
@@ -179,7 +193,7 @@ public sealed class GatewayClient : IDisposable
         {
             // Серіалізуємо в UI-потоці, бо перелік датчиків там же і змінюється
             var body = await Dispatcher.UIThread.InvokeAsync(() =>
-                JsonSerializer.Serialize(new { Sensors = _device.Sensors }));
+                JsonSerializer.Serialize(new { Sensors = _device.Sensors, UpdateRateMs = _device.UpdateRateMs }));
 
             using var content = new StringContent(body, Encoding.UTF8, "application/json");
             var response = await Http.PutAsync($"http://{host}:{GatewayPort}/config", content);

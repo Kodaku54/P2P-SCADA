@@ -4,46 +4,52 @@
              x:Class="AvaloniaApplication1.Views.Widgets.InputWidgetView"
              x:DataType="widgets:InputWidgetViewModel"
              Classes.stale="{Binding IsStale}">
-    <Viewbox Width="{Binding Width}" Height="{Binding Height}" Stretch="Uniform">
-        <Panel>
-            <!-- Датчик Bool: кнопка, що записує фіксоване значення -->
-            <Border Width="200" Height="100" Background="#2B2A4A" CornerRadius="10" Padding="6"
-                    IsVisible="{Binding IsButton}">
-                <StackPanel Spacing="6" VerticalAlignment="Center">
-                    <Button Content="{Binding Title}" Command="{Binding ApplyCommand}"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                            FontSize="18" Height="48" />
-                    <TextBlock Text="{Binding StatusText}" Foreground="{Binding StatusBrush}"
-                               FontSize="12" HorizontalAlignment="Center" />
-                </StackPanel>
-            </Border>
 
-            <!-- Числові датчики: поле вводу -->
-            <Border Width="260" Height="170" Background="#2B2A4A" CornerRadius="10" Padding="12"
-                    IsVisible="{Binding IsNumeric}">
-                <StackPanel Spacing="8">
-                    <DockPanel>
-                        <TextBlock DockPanel.Dock="Right" Text="{Binding CurrentText}"
-                                   FontSize="14" Foreground="#9FA8DA" />
-                        <TextBlock Text="{Binding Title}" FontSize="14" Foreground="#E0E0E0" />
-                    </DockPanel>
+    <!-- Розмір віджета задає користувач; вміст розтягується під нього -->
+    <Panel Width="{Binding Width}" Height="{Binding Height}"
+           ToolTip.Tip="{Binding StatusText}"
+           ToolTip.Placement="Pointer"
+           ToolTip.HorizontalOffset="12"
+           ToolTip.VerticalOffset="18">
 
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
-                        <TextBox Text="{Binding InputText}">
-                            <TextBox.KeyBindings>
-                                <KeyBinding Gesture="Enter" Command="{Binding ApplyCommand}" />
-                            </TextBox.KeyBindings>
-                        </TextBox>
-                        <Button Grid.Column="1" Content="Записати" Command="{Binding ApplyCommand}" />
-                    </Grid>
+        <ToolTip.IsOpen>
+            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                <Binding Path="IsPointerOver" RelativeSource="{RelativeSource Self}" />
+                <Binding Path="StatusText" Converter="{x:Static StringConverters.IsNotNullOrEmpty}" />
+            </MultiBinding>
+        </ToolTip.IsOpen>
 
-                    <ComboBox ItemsSource="{Binding Recent}" SelectedItem="{Binding SelectedRecent}"
-                              IsVisible="{Binding HasRecent}" PlaceholderText="Останні значення"
-                              HorizontalAlignment="Stretch" />
+        <!-- Датчик Bool: кнопка на всю картку -->
+        <Border IsVisible="{Binding IsButton}"
+                Background="#2B2A4A" CornerRadius="10" Padding="12" ClipToBounds="True"
+                BorderBrush="{Binding StatusBrush}" BorderThickness="2">
+            <Button Content="{Binding Title}" Command="{Binding ApplyCommand}"
+                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                    FontSize="18" />
+        </Border>
 
-                    <TextBlock Text="{Binding StatusText}" Foreground="{Binding StatusBrush}" FontSize="12" />
-                </StackPanel>
-            </Border>
-        </Panel>
-    </Viewbox>
+        <!-- Числові датчики: поле вводу розтягується по ширині -->
+        <Border IsVisible="{Binding IsNumeric}"
+                Background="#2B2A4A" CornerRadius="10" Padding="12" ClipToBounds="True"
+                BorderBrush="{Binding StatusBrush}" BorderThickness="2">
+            <StackPanel Spacing="8" VerticalAlignment="Center">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding CurrentText}"
+                               FontSize="14" Foreground="#9FA8DA" Margin="8,0,0,0" />
+                    <TextBlock Text="{Binding Title}" FontSize="14" Foreground="#E0E0E0"
+                               TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                    <TextBox Text="{Binding InputText}">
+                        <TextBox.KeyBindings>
+                            <KeyBinding Gesture="Enter" Command="{Binding ApplyCommand}" />
+                        </TextBox.KeyBindings>
+                    </TextBox>
+                    <Button Grid.Column="1" Content="Записати" Command="{Binding ApplyCommand}" />
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Panel>
 </UserControl>
