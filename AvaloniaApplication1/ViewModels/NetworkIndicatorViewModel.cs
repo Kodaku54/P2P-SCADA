@@ -258,7 +258,7 @@ public partial class NetworkIndicatorViewModel : ViewModelBase
             TailscaleState.NeedsLogin => "Потрібен вхід. Натисність для входу.",
             TailscaleState.DaemonStopped => "Службу зупинено. Запустити?",
             TailscaleState.NotInstalled => "Tailscale не встановлено.",
-            _ => "Стан невідомий."
+            _ => "Стан невідомий. Спробувати запустити?"
         };
     }
 }

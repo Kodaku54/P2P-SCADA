@@ -22,7 +22,7 @@
                 <!-- Верхній рядок: лише дві кнопки, як було спочатку -->
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <Button Content="Вікно логіну" Command="{Binding LoginCommand}"/>
-                    <Button Content="Пристрої" Command="{Binding GoToDevicesCommand}"/>
+                    <Button Content="Пристрої та датчики" Command="{Binding GoToDevicesCommand}"/>
                     <Border BorderBrush="{Binding Network.StatusBrush}"
                             BorderThickness="2"
                             CornerRadius="5"

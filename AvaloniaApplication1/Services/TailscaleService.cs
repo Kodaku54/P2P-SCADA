@@ -24,7 +24,7 @@ public class TailscaleService
     // Не дає запустити службу двічі одночасно (старт застосунку + кнопка)
     private readonly SemaphoreSlim _startLock = new SemaphoreSlim(1, 1);
 
-    // ---------- Статус ----------
+    // Статус
 
     public async Task<TailscaleStatus> GetStatusAsync()
     {
@@ -32,11 +32,26 @@ public class TailscaleService
         {
             var result = await RunAsync(CliPath, "status --json", StatusTimeout);
 
-            // CLI відповів помилкою: найчастіше це означає, що служба не запущена
-            if (result.ExitCode != 0)
+            // Спершу пробуємо розібрати JSON, навіть якщо код виходу ненульовий
+            var parsed = ParseStatus(result.StandardOutput);
+            if (parsed != null)
+                return parsed;
+
+            if (result.ExitCode == 0)
+                return Empty(TailscaleState.Unknown);
+
+            // Код ненульовий і JSON немає: дивимось на текст помилки
+            var text = result.StandardOutput + result.StandardError;
+
+            // "unexpected state: NoState" / "Tailscale is starting": служба працює, але ще не готова
+            if (text.Contains("NoState") || text.Contains("is starting"))
+                return Empty(TailscaleState.Starting);
+
+            // "failed to connect to local tailscaled process; is the Tailscale service running?"
+            if (text.Contains("failed to connect"))
                 return Empty(TailscaleState.DaemonStopped);
 
-            return ParseStatus(result.StandardOutput) ?? Empty(TailscaleState.Unknown);
+            return Empty(TailscaleState.Unknown);
         }
         catch (Win32Exception)
         {
