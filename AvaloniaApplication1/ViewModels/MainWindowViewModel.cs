@@ -22,6 +22,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly DataSimulator? _simulator;
     private readonly List<DashboardViewModel> _allDashboards;
     private DevicesViewModel? _devices;
+    public NetworkIndicatorViewModel Network { get; } = new();
 
     [RelayCommand]
     private void Login()
@@ -132,6 +133,9 @@ public partial class MainWindowViewModel : ViewModelBase
             DeviceManager.Default.Start(_config);
 
         NetworkStatusService.Default.Start(TimeSpan.FromSeconds(5), simulate: _config.UseSimulator);
+
+        if (!_config.UseSimulator)
+            _ = Network.EnsureOnLaunchAsync();
     }
     [RelayCommand]
     private void DetachDashboard(DashboardViewModel dashboardToDetach)

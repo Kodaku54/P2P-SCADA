@@ -9,23 +9,43 @@ using AvaloniaApplication1.Models;
 namespace AvaloniaApplication1.Services;
 
 /// <summary>
-/// Періодично опитує Tailscale і тримає актуальний список вузлів.
+/// Періодично опитує Tailscale і тримає актуальний стан та список вузлів.
 /// Подія Changed викликається в UI-потоці й лише тоді, коли щось справді змінилося.
 /// </summary>
 public sealed class NetworkStatusService
 {
     public static NetworkStatusService Default { get; } = new();
 
-    private readonly TailscaleService _tailscale = new();
     private CancellationTokenSource? _cts;
+
+    // Сервіс, через який сторінки викликають дії (запуск, підключення)
+    public TailscaleService Tailscale { get; } = new();
 
     public IReadOnlyList<TailscaleNode> Nodes { get; private set; } = Array.Empty<TailscaleNode>();
 
-    // "Running", "Stopped", "NeedsLogin"..., або "Unavailable", якщо CLI не відповів
-    public string BackendState { get; private set; } = "Unknown";
+    public TailscaleState State { get; private set; } = TailscaleState.Unknown;
 
     // true, якщо замість справжнього Tailscale працює заглушка
     public bool IsSimulated { get; private set; }
+
+    // Короткий текст стану для інтерфейсу
+    public string StateText
+    {
+        get
+        {
+            var text = State switch
+            {
+                TailscaleState.Running => "підключено",
+                TailscaleState.Starting => "підключення…",
+                TailscaleState.Stopped => "відключено",
+                TailscaleState.NeedsLogin => "потрібен вхід",
+                TailscaleState.DaemonStopped => "службу зупинено",
+                TailscaleState.NotInstalled => "не встановлено",
+                _ => "невідомо"
+            };
+            return IsSimulated ? text + " (симуляція)" : text;
+        }
+    }
 
     public event Action? Changed;
 
@@ -35,7 +55,7 @@ public sealed class NetworkStatusService
 
         IsSimulated = simulate;
         _cts = new CancellationTokenSource();
-        _ = PollAsync(interval, simulate, _cts.Token);
+        _ = PollAsync(interval, _cts.Token);
     }
 
     public void Stop()
@@ -44,12 +64,18 @@ public sealed class NetworkStatusService
         _cts = null;
     }
 
-    private async Task PollAsync(TimeSpan interval, bool simulate, CancellationToken ct)
+    // Опитує негайно, не чекаючи наступного циклу (після запуску служби, підключення тощо)
+    public async Task RefreshNowAsync()
+    {
+        var status = IsSimulated ? SimulatedStatus() : await Tailscale.GetStatusAsync();
+        Dispatcher.UIThread.Post(() => Apply(status));
+    }
+
+    private async Task PollAsync(TimeSpan interval, CancellationToken ct)
     {
         while (!ct.IsCancellationRequested)
         {
-            var status = simulate ? SimulatedStatus() : await _tailscale.GetStatusAsync();
-            Dispatcher.UIThread.Post(() => Apply(status));
+            await RefreshNowAsync();
 
             try
             {
@@ -62,19 +88,16 @@ public sealed class NetworkStatusService
         }
     }
 
-    private void Apply(TailscaleStatus? status)
+    private void Apply(TailscaleStatus status)
     {
-        var state = status?.BackendState ?? "Unavailable";
-        var nodes = status?.Nodes ?? Array.Empty<TailscaleNode>();
+        if (status.State == State && status.Nodes.SequenceEqual(Nodes)) return;
 
-        if (state == BackendState && nodes.SequenceEqual(Nodes)) return;
-
-        BackendState = state;
-        Nodes = nodes;
+        State = status.State;
+        Nodes = status.Nodes;
         Changed?.Invoke();
     }
-    
-    private static TailscaleStatus SimulatedStatus() => new("Running", new[]
+
+    private static TailscaleStatus SimulatedStatus() => new(TailscaleState.Running, new[]
     {
         new TailscaleNode("rpi-lab-1", "rpi-lab-1", "100.64.0.1", true, "linux"),
         new TailscaleNode("rpi-lab-2", "rpi-lab-2", "100.64.0.2", false, "linux")
