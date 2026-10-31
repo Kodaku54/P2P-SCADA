@@ -423,4 +423,35 @@ private static void OpenInBrowser(string url)
             return false;
         }
     }
+    // Linux: дозволяє поточному користувачу керувати Tailscale без root. Потрібно один раз.
+    public static async Task<OperationResult> SetOperatorAsync()
+    {
+        if (!OperatingSystem.IsLinux())
+            return new OperationResult(false, "Потрібно лише на Linux");
+
+        try
+        {
+            // $USER тут не підійде: pkexec запускає команду від root, і там $USER був би "root".
+            // Тому ім'я поточного користувача беремо в самому застосунку.
+            var user = Environment.UserName;
+
+            var result = await RunAsync("pkexec", $"{CliPath} set --operator={user}", ElevatedTimeout);
+
+            if (result.ExitCode == 0)
+                return new OperationResult(true, "Доступ налаштовано");
+
+            if (result.ExitCode is 126 or 127)
+                return new OperationResult(false, "Налаштування скасовано або пароль невірний");
+
+            return new OperationResult(false, result.StandardError.Trim());
+        }
+        catch (Win32Exception ex)
+        {
+            return new OperationResult(false, $"Не вдалося виконати команду: {ex.Message}");
+        }
+        catch (OperationCanceledException)
+        {
+            return new OperationResult(false, "Час очікування вичерпано");
+        }
+    }
 }

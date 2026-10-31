@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -136,6 +137,12 @@ public partial class NetworkIndicatorViewModel : ViewModelBase
         try
         {
             var result = await tailscale.ConnectAsync(_loginCts.Token);
+
+            // На Linux звичайному користувачу заборонено керувати Tailscale.
+            // Пропонуємо одноразово це дозволити й пробуємо ще раз.
+            if (!result.Ok && NeedsOperator(result.Message) && await TryGrantAccessAsync())
+                result = await tailscale.ConnectAsync(_loginCts.Token);
+
             if (!result.Ok) _lastError = result.Message;
         }
         finally
@@ -143,6 +150,30 @@ public partial class NetworkIndicatorViewModel : ViewModelBase
             _loginCts.Dispose();
             _loginCts = null;
         }
+    }
+    private static bool NeedsOperator(string message) =>
+        OperatingSystem.IsLinux() && message.Contains("Access denied");
+
+    private async Task<bool> TryGrantAccessAsync()
+    {
+        var agreed = await ConfirmAsync(
+            "Потрібен дозвіл",
+            "Tailscale не дозволяє звичайному користувачу керувати підключенням.\n" +
+            "Дозволити поточному користувачу? Потрібно один раз, буде запит пароля.");
+
+        if (!agreed) return false;
+
+        SetBusy("налаштування доступу…");
+        var result = await TailscaleService.SetOperatorAsync();
+
+        if (!result.Ok)
+        {
+            _lastError = result.Message;
+            return false;
+        }
+
+        SetBusy("підключення…");
+        return true;
     }
 
     // Права кнопка (меню)
