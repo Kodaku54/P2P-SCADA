@@ -195,64 +195,66 @@ public class TailscaleService
 
     // Підключення. Якщо потрібен вхід, "tailscale up" друкує посилання: відкриваємо його в браузері
 // і чекаємо, поки користувач увійде (до 3 хвилин) або скасує очікування.
-public async Task<OperationResult> ConnectAsync(CancellationToken ct = default)
-{
-    var output = new StringBuilder();
-    var browserOpened = false;
-
-    // Локальна функція: викликається для кожного рядка, який друкує "tailscale up".
-    // Вона бачить змінні output і browserOpened із методу навколо (це називається замиканням).
-    void OnLine(string line)
+    public async Task<OperationResult> ConnectAsync(bool asRoot = false, CancellationToken ct = default)
     {
-        // Рядки приходять із фонового потоку, а stdout і stderr можуть писати одночасно
-        lock (output)
+        var useRoot = asRoot && OperatingSystem.IsLinux();
+        var program = useRoot ? "pkexec" : CliPath;
+        var arguments = useRoot ? $"{CliPath} up --operator={Environment.UserName}" : "up";
+
+        var output = new StringBuilder();
+        var browserOpened = false;
+
+        void OnLine(string line)
         {
-            output.AppendLine(line);
+            lock (output)
+            {
+                output.AppendLine(line);
+            }
+
+            // Беремо лише рядок, що ЗАЧИНАЄТЬСЯ з https://
+            var text = line.Trim();
+            if (!browserOpened && text.StartsWith("https://"))
+            {
+                browserOpened = true;
+                OpenInBrowser(text);
+            }
         }
 
-        // Посилання для входу друкується окремим рядком. Попередження теж можуть містити
-        // посилання, але всередині речення, тому беремо лише рядок, що ЗАЧИНАЄТЬСЯ з https://
-        var text = line.Trim();
-        if (!browserOpened && text.StartsWith("https://"))
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(TimeSpan.FromMinutes(3));
+
+        try
         {
-            browserOpened = true;
-            OpenInBrowser(text);
+            var result = await Cli.Wrap(program)
+                .WithArguments(arguments)
+                .WithValidation(CommandResultValidation.None)
+                .WithStandardOutputPipe(PipeTarget.ToDelegate(OnLine))
+                .WithStandardErrorPipe(PipeTarget.ToDelegate(OnLine))
+                .ExecuteAsync(cts.Token);
+
+            if (result.ExitCode == 0)
+                return new OperationResult(true, "Підключено");
+
+            if (useRoot && result.ExitCode is 126 or 127)
+                return new OperationResult(false, "Вхід скасовано або пароль невірний");
+
+            string error;
+            lock (output)
+            {
+                error = output.ToString().Trim();
+            }
+            return new OperationResult(false, error.Length > 0 ? error : $"Код виходу {result.ExitCode}");
+        }
+        catch (Win32Exception)
+        {
+            return new OperationResult(false, "Tailscale не встановлено");
+        }
+        catch (OperationCanceledException)
+        {
+            return new OperationResult(false,
+                ct.IsCancellationRequested ? "Очікування скасовано" : "Час очікування входу вичерпано");
         }
     }
-
-    // Об'єднуємо два способи скасування: кнопка користувача (ct) і таймаут 3 хвилини
-    using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-    cts.CancelAfter(TimeSpan.FromMinutes(3));
-
-    try
-    {
-        var result = await Cli.Wrap(CliPath)
-            .WithArguments("up")
-            .WithValidation(CommandResultValidation.None)
-            .WithStandardOutputPipe(PipeTarget.ToDelegate(OnLine))   // кожен рядок виводу йде в OnLine
-            .WithStandardErrorPipe(PipeTarget.ToDelegate(OnLine))
-            .ExecuteAsync(cts.Token);
-
-        if (result.ExitCode == 0)
-            return new OperationResult(true, "Підключено");
-
-        string error;
-        lock (output)
-        {
-            error = output.ToString().Trim();
-        }
-        return new OperationResult(false, error.Length > 0 ? error : $"Код виходу {result.ExitCode}");
-    }
-    catch (Win32Exception)
-    {
-        return new OperationResult(false, "Tailscale не встановлено");
-    }
-    catch (OperationCanceledException)
-    {
-        return new OperationResult(false,
-            ct.IsCancellationRequested ? "Очікування скасовано" : "Час очікування входу вичерпано");
-    }
-}
 
 public Task<OperationResult> LogoutAsync() => RunTailscaleAsync("logout", TimeSpan.FromSeconds(10));
 

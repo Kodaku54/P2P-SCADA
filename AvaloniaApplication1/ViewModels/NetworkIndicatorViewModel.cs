@@ -133,15 +133,16 @@ public partial class NetworkIndicatorViewModel : ViewModelBase
         // 3. Підключаємо. Якщо потрібен вхід, "tailscale up" відкриє браузер
         SetBusy(status.State == TailscaleState.NeedsLogin ? "очікування входу…" : "підключення…");
 
+        var needsLogin = status.State == TailscaleState.NeedsLogin;
+
         _loginCts = new CancellationTokenSource();
         try
         {
-            var result = await tailscale.ConnectAsync(_loginCts.Token);
+            var result = await tailscale.ConnectAsync(needsLogin, _loginCts.Token);
 
-            // На Linux звичайному користувачу заборонено керувати Tailscale.
-            // Пропонуємо одноразово це дозволити й пробуємо ще раз.
+            // Вхід виконано, але оператора немає: пропонуємо дозвіл і пробуємо ще раз
             if (!result.Ok && NeedsOperator(result.Message) && await TryGrantAccessAsync())
-                result = await tailscale.ConnectAsync(_loginCts.Token);
+                result = await tailscale.ConnectAsync(false, _loginCts.Token);
 
             if (!result.Ok) _lastError = result.Message;
         }
@@ -286,7 +287,9 @@ public partial class NetworkIndicatorViewModel : ViewModelBase
             TailscaleState.Running => "Відключити?",
             TailscaleState.Starting => "Tailscale запускається…",
             TailscaleState.Stopped => "Запустити?",
-            TailscaleState.NeedsLogin => "Потрібен вхід. Натисність для входу.",
+            TailscaleState.NeedsLogin => OperatingSystem.IsLinux()
+                ? "Потрібен вхід. Клік запитає пароль адміністратора та відкриє браузер."
+                : "Потрібен вхід. Клік відкриє браузер.",
             TailscaleState.DaemonStopped => "Службу зупинено. Запустити?",
             TailscaleState.NotInstalled => "Tailscale не встановлено.",
             _ => "Стан невідомий. Спробувати запустити?"
