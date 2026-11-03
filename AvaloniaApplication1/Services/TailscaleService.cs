@@ -149,17 +149,15 @@ public class TailscaleService
 
     private static async Task<OperationResult> StartOnLinuxAsync()
     {
-        // pkexec показує графічне вікно з паролем (потрібен polkit-агент у сесії)
-        var result = await RunAsync("pkexec", "systemctl start tailscaled", ElevatedTimeout);
+        // systemctl сам просить права через polkit, тому pkexec не потрібен
+        var result = await RunAsync("systemctl", "start tailscaled", ElevatedTimeout);
 
         if (result.ExitCode == 0)
             return new OperationResult(true, "Службу запущено");
 
-        // 126: вікно закрито, 127: невірний пароль / немає прав
-        if (result.ExitCode is 126 or 127)
-            return new OperationResult(false, "Запуск скасовано або пароль невірний");
-
-        return new OperationResult(false, $"systemctl: {result.StandardError.Trim()}");
+        // Точні коди виходу при скасуванні я не знаю, тому показуємо текст самої команди
+        var error = result.StandardError.Trim();
+        return new OperationResult(false, error.Length > 0 ? error : $"systemctl завершився з кодом {result.ExitCode}");
     }
 
     private static async Task<OperationResult> StartOnWindowsAsync()
